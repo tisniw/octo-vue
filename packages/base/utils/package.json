@@ -1,0 +1,150 @@
+{
+  "name": "@octovue/utils",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "description": "通用工具层:类型守卫、深拷贝、防抖节流、日期、颜色、加密等",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./utils": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./shared": {
+      "types": "./src/shared/types.ts",
+      "import": "./src/shared/types.ts",
+      "default": "./src/shared/types.ts"
+    },
+    "./function/fn": {
+      "types": "./src/function/fn/index.ts",
+      "import": "./src/function/fn/index.ts",
+      "default": "./src/function/fn/index.ts"
+    },
+    "./function/strings": {
+      "types": "./src/function/strings/index.ts",
+      "import": "./src/function/strings/index.ts",
+      "default": "./src/function/strings/index.ts"
+    },
+    "./function/numbers": {
+      "types": "./src/function/numbers/index.ts",
+      "import": "./src/function/numbers/index.ts",
+      "default": "./src/function/numbers/index.ts"
+    },
+    "./function/format": {
+      "types": "./src/function/format/index.ts",
+      "import": "./src/function/format/index.ts",
+      "default": "./src/function/format/index.ts"
+    },
+    "./function/arrays": {
+      "types": "./src/function/arrays/index.ts",
+      "import": "./src/function/arrays/index.ts",
+      "default": "./src/function/arrays/index.ts"
+    },
+    "./function/object": {
+      "types": "./src/function/object/index.ts",
+      "import": "./src/function/object/index.ts",
+      "default": "./src/function/object/index.ts"
+    },
+    "./function/async": {
+      "types": "./src/function/async/index.ts",
+      "import": "./src/function/async/index.ts",
+      "default": "./src/function/async/index.ts"
+    },
+    "./function/classnames": {
+      "types": "./src/function/classnames/index.ts",
+      "import": "./src/function/classnames/index.ts",
+      "default": "./src/function/classnames/index.ts"
+    },
+    "./function/url": {
+      "types": "./src/function/url/index.ts",
+      "import": "./src/function/url/index.ts",
+      "default": "./src/function/url/index.ts"
+    },
+    "./validation/rules": {
+      "types": "./src/validation/rules/index.ts",
+      "import": "./src/validation/rules/index.ts",
+      "default": "./src/validation/rules/index.ts"
+    },
+    "./validation/validator": {
+      "types": "./src/validation/validator/index.ts",
+      "import": "./src/validation/validator/index.ts",
+      "default": "./src/validation/validator/index.ts"
+    },
+    "./runtime/common": {
+      "types": "./src/runtime/common/index.ts",
+      "import": "./src/runtime/common/index.ts",
+      "default": "./src/runtime/common/index.ts"
+    },
+    "./runtime/browser": {
+      "types": "./src/runtime/browser/index.ts",
+      "import": "./src/runtime/browser/index.ts",
+      "default": "./src/runtime/browser/index.ts"
+    },
+    "./dom/element": {
+      "types": "./src/dom/element/index.ts",
+      "import": "./src/dom/element/index.ts",
+      "default": "./src/dom/element/index.ts"
+    },
+    "./dom/event": {
+      "types": "./src/dom/event/index.ts",
+      "import": "./src/dom/event/index.ts",
+      "default": "./src/dom/event/index.ts"
+    },
+    "./dom/style": {
+      "types": "./src/dom/style/index.ts",
+      "import": "./src/dom/style/index.ts",
+      "default": "./src/dom/style/index.ts"
+    },
+    "./color/color": {
+      "types": "./src/color/color/index.ts",
+      "import": "./src/color/color/index.ts",
+      "default": "./src/color/color/index.ts"
+    },
+    "./date/date": {
+      "types": "./src/date/date/index.ts",
+      "import": "./src/date/date/index.ts",
+      "default": "./src/date/date/index.ts"
+    },
+    "./date/lunar": {
+      "types": "./src/date/lunar/index.ts",
+      "import": "./src/date/lunar/index.ts",
+      "default": "./src/date/lunar/index.ts"
+    },
+    "./date/lunar-data": {
+      "types": "./src/date/lunar-data/index.ts",
+      "import": "./src/date/lunar-data/index.ts",
+      "default": "./src/date/lunar-data/index.ts"
+    },
+    "./crypto/crypto": {
+      "types": "./src/crypto/crypto/index.ts",
+      "import": "./src/crypto/crypto/index.ts",
+      "default": "./src/crypto/crypto/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "d3-color": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/d3-color": "^3.1.3",
+    "@types/node": "^26.0.1",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,21 @@
+export type { ElementRect } from './element.js'
+export {
+  getBoundingClientRect,
+  getRectToViewport,
+  getRectToParent,
+  getRectTo,
+  getContentWidth,
+  getContentHeight,
+  getOffsetWidth,
+  getOffsetHeight,
+  getOuterWidth,
+  getOuterHeight,
+  isInViewport,
+  isPartiallyInViewport,
+  getVisibleRatio,
+  getDistanceToViewportTop,
+  getDistanceToViewportBottom,
+  scrollIntoView,
+  scrollTo,
+  getScrollPosition,
+} from './element.js'
