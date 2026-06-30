@@ -34,31 +34,31 @@ export class HttpClient {
   // ===== 基础方法 =====
 
   async get<T = unknown>(url: string, config?: HttpRequestConfig): Promise<T> {
-    return this.internal.request<T>({ ...config, url, method: 'GET' } as any)
+    return this.internal.request<T>({ ...config, url, method: 'GET' })
   }
 
   async post<T = unknown>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T> {
-    return this.internal.request<T>({ ...config, url, data, method: 'POST' } as any)
+    return this.internal.request<T>({ ...config, url, data, method: 'POST' })
   }
 
   async put<T = unknown>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T> {
-    return this.internal.request<T>({ ...config, url, data, method: 'PUT' } as any)
+    return this.internal.request<T>({ ...config, url, data, method: 'PUT' })
   }
 
   async delete<T = unknown>(url: string, config?: HttpRequestConfig): Promise<T> {
-    return this.internal.request<T>({ ...config, url, method: 'DELETE' } as any)
+    return this.internal.request<T>({ ...config, url, method: 'DELETE' })
   }
 
   async patch<T = unknown>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T> {
-    return this.internal.request<T>({ ...config, url, data, method: 'PATCH' } as any)
+    return this.internal.request<T>({ ...config, url, data, method: 'PATCH' })
   }
 
   async head<T = unknown>(url: string, config?: HttpRequestConfig): Promise<T> {
-    return this.internal.request<T>({ ...config, url, method: 'HEAD' } as any)
+    return this.internal.request<T>({ ...config, url, method: 'HEAD' })
   }
 
   async options<T = unknown>(url: string, config?: HttpRequestConfig): Promise<T> {
-    return this.internal.request<T>({ ...config, url, method: 'OPTIONS' } as any)
+    return this.internal.request<T>({ ...config, url, method: 'OPTIONS' })
   }
 
   /** 通用请求 */

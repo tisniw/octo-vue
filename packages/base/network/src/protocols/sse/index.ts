@@ -13,4 +13,5 @@ export type {
   SseReconnectConfig,
   SseHeartbeatConfig,
   ISseConnectionPool,
+  SseEventMap,
 } from './types'

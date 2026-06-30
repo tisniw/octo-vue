@@ -2,7 +2,7 @@
   "name": "@octovue/network",
   "version": "0.1.0",
   "description": "网络通信设施 — HTTP/SSE/WebSocket 客户端",
-  "keywords": ["http", "sse", "websocket", "axios", "network", "reactive"],
+  "keywords": ["http", "sse", "websocket", "axios", "network"],
   "license": "MIT",
   "author": "TISNIW",
   "repository": {
@@ -21,11 +21,14 @@
       "import": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./protocols/http": "./src/protocols/http/index.ts",
+    "./protocols/sse": "./src/protocols/sse/index.ts",
+    "./protocols/ws": "./src/protocols/ws/index.ts",
+    "./protocols/*": "./src/protocols/*/index.ts",
     "./package.json": "./package.json"
   },
   "files": ["src"],
   "scripts": {
-    "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {

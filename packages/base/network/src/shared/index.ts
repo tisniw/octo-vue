@@ -122,6 +122,8 @@ export {
   downloadFile,
   downloadAndSave,
   triggerBrowserDownload,
+  resumeDownload,
+  httpPostForm,
   createUploadTask,
   createDownloadTask,
 } from './transfer'

@@ -1,5 +1,6 @@
 import { NetworkError } from '../../types/error'
 import type { ErrorKind } from '../../types/error'
+import { RETRYABLE_STATUS as RETRYABLE_STATUS_ARR } from '../error'
 
 /** 重试配置 */
 export interface RetryConfig {
@@ -24,10 +25,10 @@ export const DEFAULT_RETRYABLE_KINDS: ReadonlySet<ErrorKind> = new Set<ErrorKind
   'server',
 ])
 
-/** 默认可重试的 HTTP 状态码 */
-export const DEFAULT_RETRYABLE_STATUS: ReadonlySet<number> = new Set<number>([
-  408, 425, 429, 500, 502, 503, 504,
-])
+/** 默认可重试的 HTTP 状态码(从 error 模块引用单一来源) */
+export const DEFAULT_RETRYABLE_STATUS: ReadonlySet<number> = new Set<number>(
+  RETRYABLE_STATUS_ARR
+)
 
 /** 默认重试配置 */
 export const defaultRetryConfig: Required<RetryConfig> = {

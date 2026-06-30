@@ -62,6 +62,23 @@ export interface SseClient<T = unknown> {
   readonly lastEventId: string | undefined
 }
 
+/**
+ * SSE 事件映射 — 声明合并扩展
+ *
+ * @example
+ * ```ts
+ * declare module '@octovue/network' {
+ *   interface SseEventMap {
+ *     progress: { value: number }
+ *     complete: { ok: boolean }
+ *   }
+ * }
+ * ```
+ */
+export interface SseEventMap {
+  message: unknown
+}
+
 /** 连接池接口 */
 export interface ISseConnectionPool {
   acquire<T = unknown>(url: string, config?: SseClientConfig): SseClient<T>

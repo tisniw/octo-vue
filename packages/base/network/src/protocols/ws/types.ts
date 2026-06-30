@@ -52,6 +52,23 @@ export type WsAnyHandler = (message: WsTypedMessage, raw: MessageEvent) => void
 /** 生命周期处理器 */
 export type WsLifecycleHandler<T = void> = (data: T) => void
 
+/**
+ * WS 事件映射 — 声明合并扩展
+ *
+ * @example
+ * ```ts
+ * declare module '@octovue/network' {
+ *   interface WsEventMap {
+ *     chat: ChatMessage
+ *     notification: NotificationPayload
+ *   }
+ * }
+ * ```
+ */
+export interface WsEventMap {
+  message: WsTypedMessage
+}
+
 /** 重连配置 */
 export interface WsReconnectConfig {
   enabled?: boolean

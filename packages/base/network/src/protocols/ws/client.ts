@@ -13,6 +13,7 @@ import type {
 import { NO_RETRY_CLOSE_CODES } from './types'
 import { jsonCodec } from './codec'
 import { calculateDelay } from '../../shared/retry'
+import { TimeoutError } from '../../shared/error'
 
 /**
  * WS 客户端实现
@@ -98,7 +99,7 @@ export class WsClientImpl<T = unknown> implements WsClient<T> {
       const timeoutMs = options.timeout ?? 30000
       const timer = setTimeout(() => {
         this._pendingRequests.delete(requestId)
-        reject(new Error(`WS request timeout: ${type}`))
+        reject(new TimeoutError(`WS request timeout: ${type}`, timeoutMs))
       }, timeoutMs)
 
       this._pendingRequests.set(requestId, { resolve, reject, timeout: timer })

@@ -20,15 +20,45 @@ import type { HttpInterceptors } from '../../shared/interceptors'
 import { getHttpConfig } from '../../shared/inject'
 import type { HttpClientConfig, HttpRequestConfig, InternalHttpRequestConfig } from './types'
 
+/** 拦截器 id 映射(String → axios number) */
+class InterceptorIdMap {
+  private map = new Map<string, number>()
+
+  set(stringId: string, axiosId: number): void {
+    this.map.set(stringId, axiosId)
+  }
+
+  delete(stringId: string): boolean {
+    return this.map.delete(stringId)
+  }
+
+  get(stringId: string): number | undefined {
+    return this.map.get(stringId)
+  }
+
+  has(stringId: string): boolean {
+    return this.map.has(stringId)
+  }
+
+  clear(): void {
+    this.map.clear()
+  }
+}
+
 /**
  * InternalHttpClient — 统一请求管线
- * 被函数式 API / 客户端实例 / 链式构造器共享
+ * 修复 H-2: 拦截器 eject/has 通过 id 映射实现
+ * 修复 H-3: 去重 identity 在 executeRequest 内基于完整 url+method+body 生成
+ * 修复 M-1: 错误拦截器抛错时保留原始错误并附加 cause
  */
 export class InternalHttpClient {
   readonly instance: AxiosInstance
   readonly interceptors: HttpInterceptors
   private config: HttpClientConfig
   private timeoutScheduler = new TimeoutScheduler()
+  private requestIdMap = new InterceptorIdMap()
+  private responseIdMap = new InterceptorIdMap()
+  private errorIdMap = new InterceptorIdMap()
 
   constructor(config: HttpClientConfig = {}) {
     this.config = { timeout: 30000, ...config }
@@ -41,29 +71,57 @@ export class InternalHttpClient {
     this.interceptors = {
       request: {
         use: (i: any) => {
-          const id = this.instance.interceptors.request.use(i.onFulfilled, i.onRejected)
-          return String(id)
+          const axiosId = this.instance.interceptors.request.use(i.onFulfilled, i.onRejected)
+          const stringId = i.id ?? `_auto_${axiosId}_${Date.now()}`
+          this.requestIdMap.set(stringId, axiosId)
+          return stringId
         },
         eject: (id: string) => {
-          // axios 不支持 id 概念,这里只是占位实现
+          const axiosId = this.requestIdMap.get(id)
+          if (axiosId !== undefined) {
+            this.instance.interceptors.request.eject(axiosId)
+            this.requestIdMap.delete(id)
+          }
         },
-        clear: () => this.instance.interceptors.request.clear(),
-        has: () => false,
+        clear: () => {
+          this.instance.interceptors.request.clear()
+          this.requestIdMap.clear()
+        },
+        has: (id: string) => this.requestIdMap.has(id),
       },
       response: {
         use: (i: any) => {
-          const id = this.instance.interceptors.response.use(i.onFulfilled, i.onRejected)
-          return String(id)
+          const axiosId = this.instance.interceptors.response.use(i.onFulfilled, i.onRejected)
+          const stringId = i.id ?? `_auto_${axiosId}_${Date.now()}`
+          this.responseIdMap.set(stringId, axiosId)
+          return stringId
         },
-        eject: (id: string) => {},
-        clear: () => this.instance.interceptors.response.clear(),
-        has: () => false,
+        eject: (id: string) => {
+          const axiosId = this.responseIdMap.get(id)
+          if (axiosId !== undefined) {
+            this.instance.interceptors.response.eject(axiosId)
+            this.responseIdMap.delete(id)
+          }
+        },
+        clear: () => {
+          this.instance.interceptors.response.clear()
+          this.responseIdMap.clear()
+        },
+        has: (id: string) => this.responseIdMap.has(id),
       },
       error: {
-        use: (i: any) => '',
-        eject: (id: string) => {},
-        clear: () => {},
-        has: () => false,
+        use: (i: any) => {
+          const stringId = i.id ?? `_auto_err_${Date.now()}_${Math.random().toString(36).slice(2)}`
+          this.errorIdMap.set(stringId, 0)
+          return stringId
+        },
+        eject: (id: string) => {
+          this.errorIdMap.delete(id)
+        },
+        clear: () => {
+          this.errorIdMap.clear()
+        },
+        has: (id: string) => this.errorIdMap.has(id),
       },
     }
   }
@@ -81,21 +139,33 @@ export class InternalHttpClient {
       config.signal.addEventListener('abort', () => controller.cancel('user-cancelled'))
     }
 
-    // 3. 去重
-    const identity = generateIdentity({ method: 'AUTO', url: config.baseURL ?? '', data: config.params })
-    const dedupeEnabled = config.dedupe ?? this.config.dedupe ?? globalConfig.dedupe ?? true
+    // 3. 启动超时调度
+    this.timeoutScheduler.schedule(timeoutMs, controller.signal)
+
+    // 持有本次去重 identity 以便 finally 中注销
+    let dedupeIdentity: string | null = null
+    const dedupeEnabled =
+      config.dedupe ?? this.config.dedupe ?? globalConfig.dedupe ?? true
     if (dedupeEnabled) {
-      const dup = getDedupeManager().register(identity, controller)
+      const url = config.url ?? ''
+      const method = config.method ?? 'GET'
+      dedupeIdentity = generateIdentity({
+        method,
+        url: this._resolveUrl({
+          url,
+          baseURL: config.baseURL ?? this.config.baseURL,
+          params: config.params,
+        } as InternalHttpRequestConfig),
+        data: config.data,
+      })
+      const dup = getDedupeManager().register(dedupeIdentity, controller)
       if (dup.isDuplicate && dup.previousController) {
         dup.previousController.cancel('deduped')
       }
     }
 
-    // 4. 启动超时调度
-    this.timeoutScheduler.schedule(timeoutMs, controller.signal)
-
     try {
-      // 5. 重试执行器
+      // 4. 重试执行器
       const exec = () => this.executeRequest<T>(config, controller)
       const retryConfig = config.retry ?? this.config.retry ?? globalConfig.defaultRetry
       const result = retryConfig
@@ -103,10 +173,8 @@ export class InternalHttpClient {
         : await exec()
       return result
     } catch (err) {
-      // 6. 错误分类
-      let classified = classifyError(err)
-
-      // 区分取消 vs 超时
+      // 5. 错误分类
+      let classified: ReturnType<typeof classifyError>
       if (controller.cancelled) {
         if (controller.signal.reason === 'timeout') {
           classified = new TimeoutError('Request timeout', timeoutMs, { cause: err })
@@ -116,36 +184,48 @@ export class InternalHttpClient {
             { cause: err }
           )
         }
-      } else if (axios.isAxiosError(err) && !err.response) {
-        classified = new NetworkException(err.message, { cause: err })
+      } else if (axios.isAxiosError(err)) {
+        if (!err.response) {
+          classified = new NetworkException(err.message, { cause: err })
+        } else {
+          classified = classifyError(err)
+        }
+      } else {
+        classified = classifyError(err)
       }
 
-      // 7. 错误拦截器
+      // 6. 错误拦截器(抛错时保留原错误,不再吞掉)
       try {
         classified = await runErrorInterceptors(this.interceptors.error, classified, config.interceptors)
-      } catch {
-        // 错误拦截器抛出时忽略,保持原错误
+      } catch (interceptorErr) {
+        // 拦截器自身抛出时,作为 cause 附加到原错误
+        // cause 是 readonly,用类型断言绕过
+        ;(classified as any).cause = interceptorErr
+        // 开发环境 console.warn 提示
+        if (typeof console !== 'undefined') {
+          console.warn('[network] error interceptor threw:', interceptorErr)
+        }
       }
 
       throw classified
     } finally {
       this.timeoutScheduler.clear()
-      if (dedupeEnabled) {
-        getDedupeManager().unregister(identity)
+      if (dedupeIdentity) {
+        getDedupeManager().unregister(dedupeIdentity)
       }
     }
   }
 
   /** 实际 axios 请求 */
   private async executeRequest<T>(config: HttpRequestConfig, controller: HttpCancelController): Promise<T> {
-    // 1. 运行请求拦截器
+    // 1. 构建内部配置
     const internalConfig: InternalHttpRequestConfig = {
-      url: this.extractUrl(config),
-      method: 'AUTO',
+      url: config.url ?? '',
+      method: (config.method ?? 'GET') as string,
       baseURL: config.baseURL ?? this.config.baseURL,
       params: config.params,
       headers: { ...this.config.headers, ...config.headers },
-      data: (config as any).data,
+      data: config.data,
       timeout: config.timeout ?? this.config.timeout,
       withCredentials: config.withCredentials ?? this.config.withCredentials,
       responseType: config.responseType,
@@ -162,13 +242,14 @@ export class InternalHttpClient {
       },
     }
 
+    // 2. 运行请求拦截器(去重已在外层 request() 中处理)
     const finalConfig = await runRequestInterceptors(
       this.interceptors.request,
       internalConfig,
       config.interceptors
     )
 
-    // 2. 应用 transformRequest
+    // 4. 应用 transformRequest
     if (finalConfig._meta?.transformRequest) {
       const transforms = Array.isArray(finalConfig._meta.transformRequest)
         ? finalConfig._meta.transformRequest
@@ -178,10 +259,10 @@ export class InternalHttpClient {
       }
     }
 
-    // 3. 发起 axios 请求
-    const axiosResponse = await this.instance.request(finalConfig)
+    // 5. 发起 axios 请求
+    const axiosResponse: AxiosResponse = await this.instance.request(finalConfig)
 
-    // 4. 应用 transformResponse
+    // 6. 应用 transformResponse
     let data = axiosResponse.data
     if (finalConfig._meta?.transformResponse) {
       const transforms = Array.isArray(finalConfig._meta.transformResponse)
@@ -194,7 +275,7 @@ export class InternalHttpClient {
 
     const wrappedResponse = { ...axiosResponse, data }
 
-    // 5. 业务响应解包(如果开启了)
+    // 7. 业务响应解包(如果开启了)
     let result: unknown = data
     if (
       data !== null &&
@@ -206,7 +287,7 @@ export class InternalHttpClient {
       result = unwrapResponse({ data: data as any })
     }
 
-    // 6. 运行响应拦截器
+    // 8. 运行响应拦截器
     const final = await runResponseInterceptors(
       this.interceptors.response,
       result as T,
@@ -216,9 +297,20 @@ export class InternalHttpClient {
     return final
   }
 
-  private extractUrl(config: HttpRequestConfig): string {
-    // url 字段存储在 _meta?简化:通过函数式 API / 实例方法 / 链式构造器传入的 url 已合并
-    return (config as any).url ?? ''
+  /** 解析完整 URL(baseURL + url + params) */
+  private _resolveUrl(config: InternalHttpRequestConfig): string {
+    let url = config.url ?? ''
+    if (config.baseURL && !url.startsWith('http')) {
+      url = config.baseURL.replace(/\/$/, '') + '/' + url.replace(/^\//, '')
+    }
+    if (config.params && Object.keys(config.params).length > 0) {
+      const qs = new URLSearchParams()
+      for (const [k, v] of Object.entries(config.params)) {
+        qs.append(k, String(v))
+      }
+      url += (url.includes('?') ? '&' : '?') + qs.toString()
+    }
+    return url
   }
 
   /** 更新配置 */

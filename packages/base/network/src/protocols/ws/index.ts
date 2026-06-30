@@ -23,4 +23,5 @@ export type {
   WsAnyHandler,
   WsManager,
   WsRequestOptions,
+  WsEventMap,
 } from './types'

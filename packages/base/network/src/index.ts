@@ -2,7 +2,11 @@
 // 三个平铺命名空间:http / ws / sse
 // 可选伞形聚合:network = { http, ws, sse }
 
-// HTTP
+import { http } from './protocols/http'
+import { ws } from './protocols/ws'
+import { sse } from './protocols/sse'
+
+// ===== HTTP =====
 export { HttpClient, http } from './protocols/http'
 export type {
   HttpMethod,
@@ -16,7 +20,7 @@ export type {
   DownloadConfig,
 } from './protocols/http'
 
-// WebSocket
+// ===== WebSocket =====
 export { WsManagerImpl, ws, WsClientImpl } from './protocols/ws'
 export { jsonCodec, NO_RETRY_CLOSE_CODES } from './protocols/ws'
 export type {
@@ -38,9 +42,10 @@ export type {
   WsAnyHandler,
   WsManager,
   WsRequestOptions,
+  WsEventMap,
 } from './protocols/ws'
 
-// SSE
+// ===== SSE =====
 export { SseConnectionPool, sse, createSseClient, SseClientImpl } from './protocols/sse'
 export type {
   SseClient,
@@ -53,9 +58,10 @@ export type {
   SseReconnectConfig,
   SseHeartbeatConfig,
   ISseConnectionPool,
+  SseEventMap,
 } from './protocols/sse'
 
-// 共享能力
+// ===== 共享能力 =====
 export {
   // 取消
   createCancelController,
@@ -122,6 +128,8 @@ export {
   downloadFile,
   createDownloadTask,
   triggerBrowserDownload,
+  resumeDownload,
+  httpPostForm,
   // 全局配置
   setHttpConfig,
   getHttpConfig,
@@ -166,11 +174,7 @@ export type {
   AnyFn,
 } from './types/utility'
 
-// 伞形聚合(单导入风格)
-import { http } from './protocols/http'
-import { ws } from './protocols/ws'
-import { sse } from './protocols/sse'
-
+// ===== 伞形聚合(单导入风格) =====
 /**
  * 三个协议的伞形聚合入口
  *

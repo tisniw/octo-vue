@@ -10,6 +10,10 @@ export type HttpResponseType = 'json' | 'text' | 'blob' | 'arraybuffer' | 'strea
 
 /** 单次请求配置 */
 export interface HttpRequestConfig {
+  /** 完整 URL(由调用方传入,client 内部读取) */
+  url?: string
+  /** HTTP 方法(由调用方传入,client 内部读取) */
+  method?: HttpMethod
   baseURL?: string
   params?: Record<string, unknown>
   headers?: Record<string, string>
@@ -17,6 +21,8 @@ export interface HttpRequestConfig {
   withCredentials?: boolean
   responseType?: HttpResponseType
   signal?: AbortSignal
+  /** 请求体(POST/PUT/PATCH 用) */
+  data?: unknown
   /** 是否启用去重(默认 true) */
   dedupe?: boolean
   /** 重试配置(覆盖客户端默认) */
@@ -111,4 +117,6 @@ export interface HttpChain<T = unknown> {
   timeout(ms: number): HttpChain<T>
   responseType(type: HttpResponseType): HttpChain<T>
   send(): Promise<T>
+  /** 取消请求(在 send() 之后调用) */
+  cancel(reason?: string): void
 }
