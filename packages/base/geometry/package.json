@@ -1,0 +1,68 @@
+{
+  "name": "@octovue/geometry",
+  "version": "0.1.0",
+  "description": "几何计算核心:图元定义、矩阵变换、空间运算、碰撞检测",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./primitive": {
+      "types": "./src/primitive/index.ts",
+      "import": "./src/primitive/index.ts",
+      "default": "./src/primitive/index.ts"
+    },
+    "./matrix": {
+      "types": "./src/matrix/index.ts",
+      "import": "./src/matrix/index.ts",
+      "default": "./src/matrix/index.ts"
+    },
+    "./util": {
+      "types": "./src/util/index.ts",
+      "import": "./src/util/index.ts",
+      "default": "./src/util/index.ts"
+    },
+    "./transform": {
+      "types": "./src/transform/index.ts",
+      "import": "./src/transform/index.ts",
+      "default": "./src/transform/index.ts"
+    },
+    "./collision": {
+      "types": "./src/collision/index.ts",
+      "import": "./src/collision/index.ts",
+      "default": "./src/collision/index.ts"
+    },
+    "./coord": {
+      "types": "./src/coord/index.ts",
+      "import": "./src/coord/index.ts",
+      "default": "./src/coord/index.ts"
+    },
+    "./shared": {
+      "types": "./src/shared/index.ts",
+      "import": "./src/shared/index.ts",
+      "default": "./src/shared/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "package.json"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
