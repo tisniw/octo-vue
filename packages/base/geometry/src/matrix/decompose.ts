@@ -11,8 +11,8 @@ export function decompose(m: Matrix2DType): Decomposed2D {
   const translate: Point = PointFn(m.tx, m.ty)
   const sx = Math.hypot(m.a, m.b)
   const sy = Math.hypot(m.c, m.d)
-  const rotate: Radian = Math.atan2(m.b, m.a)
-  const skew: Radian = Math.atan2(-m.c * m.d + m.a * m.b, m.a * m.d + m.b * m.c) - rotate
+  const rotate: Radian = Math.atan2(m.b, m.a) as Radian
+  const skew: Radian = (Math.atan2(-m.c * m.d + m.a * m.b, m.a * m.d + m.b * m.c) - rotate) as Radian
   return { translate: { x: translate.x, y: translate.y }, rotate, scale: { x: sx, y: sy }, skew }
 }
 

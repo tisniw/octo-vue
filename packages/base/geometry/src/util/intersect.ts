@@ -88,6 +88,11 @@ export function lineCircle(s: Segment, c: Circle): Point[] {
   return result
 }
 
+/** 线段与圆相交(别名 for lineCircle) */
+export function segmentCircle(s: Segment, c: Circle): Point[] {
+  return lineCircle(s, c)
+}
+
 function dedupePoints(points: Point[], eps: number): Point[] {
   const result: Point[] = []
   for (const p of points) {

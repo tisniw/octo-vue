@@ -24,14 +24,20 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue }
 
-/** 角度单位:弧度(内部计算统一用弧度) */
-export type Radian = number
+/**
+ * 角度单位:弧度(内部计算统一用弧度)
+ * 品牌类型,避免与 Degree 混淆
+ */
+export type Radian = number & { readonly __brand: 'Radian' }
 
-/** 角度单位:度(API 接口对外暴露用度) */
-export type Degree = number
+/**
+ * 角度单位:度(API 接口对外暴露用度)
+ * 品牌类型,避免与 Radian 混淆
+ */
+export type Degree = number & { readonly __brand: 'Degree' }
 
 /** 距离单位:像素(2D 默认) / 世界单位(3D) */
-export type Distance = number
+export type Distance = number & { readonly __brand: 'Distance' }
 
 /** 坐标轴标识 */
 export type Axis = 'x' | 'y' | 'z'

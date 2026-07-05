@@ -28,7 +28,7 @@ export {
   angle, angleBetween, angleDeg, angleBetweenDeg,
   lerp, lerpNum, lerp3D, slerp,
   bezier2, bezier3, bezier3Samples,
-  lineLine, lineRect, lineCircle, segmentSegment,
+  lineLine, lineRect, lineCircle, segmentSegment, segmentCircle,
   bbox, centroid, convexHull,
 } from './util/index.js'
 
@@ -54,3 +54,6 @@ export { coord, Radian, Degree, DEFAULT_DPI, cmToPx, pxToCm, inchToPx, pxToInch 
 export { GeometryError } from './shared/error.js'
 export { EPSILON, MATRIX_EPSILON, DEG2RAD, RAD2DEG, TAU, PI } from './shared/constants.js'
 export { clamp, uid, isFiniteNumber, isPlainObject, isArray, near } from './shared/utils.js'
+
+// === 仅类型导出(无值冲突) ===
+export type { DeepReadonly, Nullable, Optional, AnyFn, AnyObject, JsonValue, Axis, Plane, Distance } from './shared/types.js'

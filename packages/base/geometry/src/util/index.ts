@@ -6,7 +6,7 @@ export { lerp, lerpNum, lerp3D, slerp } from './lerp.js'
 
 export { bezier2, bezier3, bezier3Samples } from './bezier.js'
 
-export { lineLine, segmentSegment, lineRect, lineCircle } from './intersect.js'
+export { lineLine, segmentSegment, lineRect, lineCircle, segmentCircle } from './intersect.js'
 
 export { bbox } from './bbox.js'
 
