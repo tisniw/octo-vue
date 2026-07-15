@@ -1,0 +1,1241 @@
+/**
+ * o-text 文本组件主样式
+ * 已合并 styles/index.scss + styles/variables.scss → cpns/{index.scss, _variables.scss}(2026-06)
+ *
+ * 6 严格语义对齐主题系统 FUNCTIONAL_SEMANTICS:
+ *   default / success / error / warning / info / emphasis
+ * 已移除 legacy 别名(core / muted / faint / secondary / accent)
+ *
+ * 字号 / 字重 / 色调 全部由 @each 遍历 $o-text-themes / $o-text-sizes / $o-text-weights
+ * 自动生成 .o-text--{size} / .o-text--weight-{weight} / .o-text--{tony} 类样式
+ *
+ * 深色模式由主题系统统一提供（:root[data-theme=dark]），
+ * 本文件不再维护 dark map,避免双重来源
+ *
+ * 包含：基础 / 显示效果 / 交互效果 / 动画效果
+ */
+
+@use 'sass:map';
+@use './variables' as *;
+
+// ==================== 涟漪动画 ====================
+
+@keyframes o-text-ripple {
+  to {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+// ==================== 基础组件 ====================
+
+.o-text {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+  color: $o-text-color-primary;
+  line-height: $o-text-line-height-base;
+  text-decoration: none;
+  user-select: text;
+  transition:
+    color 0.25s ease,
+    background-color 0.25s ease,
+    opacity 0.25s ease,
+    transform 0.2s ease;
+
+  // ── 禁用状态 ──
+  &--disabled {
+    opacity: $o-text-disabled-opacity;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  // ── 块级标签：强制 display: block 覆盖基础类 inline-block ──
+  &--tag-h1,
+  &--tag-h2,
+  &--tag-h3,
+  &--tag-h4,
+  &--tag-h5,
+  &--tag-h6,
+  &--tag-p {
+    display: block !important;
+  }
+
+  // ── 标题标签样式 ──
+  @each $tag, $config in $o-text-heading-sizes {
+    &--tag-#{$tag} {
+      font-size: map.get($config, font-size);
+      line-height: map.get($config, line-height);
+      font-weight: map.get($config, font-weight);
+      letter-spacing: map.get($config, letter-spacing);
+      @if map.has-key($config, font-style) {
+        font-style: map.get($config, font-style);
+      }
+      @if map.has-key($config, font-family) {
+        font-family: map.get($config, font-family);
+      }
+      @if map.has-key($config, white-space) {
+        white-space: map.get($config, white-space);
+      }
+      @if map.has-key($config, background) {
+        background: map.get($config, background);
+      }
+      @if map.has-key($config, padding) {
+        padding: map.get($config, padding);
+      }
+      @if map.has-key($config, border-radius) {
+        border-radius: map.get($config, border-radius);
+      }
+      @if map.has-key($config, margin) {
+        margin: map.get($config, margin);
+      }
+    }
+  }
+
+  // ── pre 标签额外样式（确保换行和显示正确） ──
+  &--tag-pre {
+    display: block !important;
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    // 走 default 主题的 fill-2 通道（弱化底色），不再是 core
+    background: var(--o-default-2, #f5f5f5) !important;
+    padding: 16px !important;
+    border-radius: 8px !important;
+    margin: 12px 0 !important;
+
+    // code 嵌套在 pre 内时，继承 pre 的样式
+    .o-text--tag-code {
+      display: block !important;
+      font-family: inherit !important;
+      font-size: inherit !important;
+      line-height: inherit !important;
+      white-space: inherit !important;
+      background: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+  }
+
+  // ── code 标签样式（独立使用时） ──
+  &--tag-code {
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+
+  // ── 禁止选择 ──
+  &--no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  // ── 尺寸变体 ──
+  @each $size, $config in $o-text-sizes {
+    &--#{$size} {
+      font-size: map.get($config, font-size);
+      line-height: map.get($config, line-height);
+      letter-spacing: map.get($config, letter-spacing);
+    }
+  }
+
+  // ── 字重变体 ──
+  @each $weight in $o-text-weights {
+    &--weight-#{$weight} {
+      font-weight: $weight;
+    }
+  }
+
+  // ── 6 严格语义色调变体（自动遍历 $o-text-themes） ──
+  @each $tony, $color in $o-text-themes {
+    &--#{$tony} {
+      color: $color;
+    }
+  }
+
+  // ── 省略号 ──
+  &--ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // 多行截断（2026-06 修复：!important 覆盖 --tag-p 的 !important；
+  //   -webkit-line-clamp 通过 CSS 变量 --o-text-line-clamp 动态注入，避免被 inline 冲突）
+  &--clamp {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--o-text-line-clamp, 2);
+    overflow: hidden;
+  }
+
+  // ── 等宽字体 ──
+  &--mono {
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+    font-feature-settings: 'liga' 0;
+  }
+
+  // ── 文本变换 ──
+  &--uppercase {
+    text-transform: uppercase;
+  }
+
+  &--lowercase {
+    text-transform: lowercase;
+  }
+
+  &--capitalize {
+    text-transform: capitalize;
+  }
+
+  // ── 可复制 ──
+  &--copyable {
+    cursor: copy;
+  }
+
+  // ── 装饰线 ──
+  &--underline {
+    text-decoration: underline;
+    text-decoration-color: var(--o-decoration-color, currentColor);
+    text-decoration-thickness: var(--o-decoration-thickness, 1px);
+    text-underline-offset: var(--o-decoration-offset, 3px);
+  }
+
+  &--overline {
+    text-decoration: overline;
+    text-decoration-color: var(--o-decoration-color, currentColor);
+    text-decoration-thickness: var(--o-decoration-thickness, 1px);
+  }
+
+  &--del,
+  &--strike {
+    text-decoration: line-through;
+    text-decoration-color: var(--o-decoration-color, currentColor);
+    text-decoration-thickness: var(--o-decoration-thickness, 1px);
+    opacity: 0.6;
+  }
+
+  &--ins {
+    text-decoration: underline;
+    text-decoration-color: var(--o-decoration-color, map.get($o-text-themes, success));
+    text-decoration-thickness: var(--o-decoration-thickness, 2px);
+    text-underline-offset: var(--o-decoration-offset, 3px);
+  }
+
+  // ── 高亮标记（4 种模式：block / line / marker / underline） ──
+  //
+  // 重要修复（2026-06）：
+  // - 废弃原 SCSS 中永远被 inline backgroundColor 覆盖的 linear-gradient
+  // - 把"高亮笔"效果提升为独立模式 o-text--mark-line
+  // - 通过 CSS 变量（--o-mark-color）由 JS 注入颜色，inline style 不再覆盖类
+  // - 默认使用 line 模式（更通用、对比度更强）
+  &--mark-block {
+    background-color: var(--o-mark-color, rgba(255, 220, 60, 0.5));
+    border-radius: var(--o-mark-radius, 2px);
+    padding: var(--o-mark-padding, 0 2px);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  &--mark-line {
+    // 高亮笔效果：背景 60% 高度色条，从 50% 位置开始
+    // 使用 background-size + background-position 更可靠（linear-gradient 直接设的 55% 位置偶尔会失数）
+    background-image: linear-gradient(
+      var(--o-mark-color, rgba(255, 220, 60, 0.6)),
+      var(--o-mark-color, rgba(255, 220, 60, 0.6))
+    );
+    background-size: 100% 40%;
+    background-position: 0 60%;
+    background-repeat: no-repeat;
+    padding: 0 2px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  &--mark-marker {
+    // 马克笔效果：块状背景 + 直角边框（像荧光笔涂在角落）
+    background-color: var(--o-mark-color, rgba(255, 220, 60, 0.7));
+    border-radius: 3px 3px 3px 0;
+    padding: 1px 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  &--mark-underline {
+    // 文字下方的"色条"（不是 text-decoration 那种细线，而是有厚度的色块）
+    text-decoration: underline;
+    text-decoration-color: var(--o-mark-color, rgba(255, 220, 60, 0.7));
+    text-decoration-thickness: 8px;
+    text-underline-offset: 4px;
+    text-decoration-skip-ink: none;
+  }
+
+  // 深色模式适配：使用更亮的颜色 + 增强对比
+  [data-theme='dark'] &--mark-block,
+  [data-theme='dark'] &--mark-line,
+  [data-theme='dark'] &--mark-marker {
+    // 深色模式默认使用更高亮度的高亮色
+    --o-mark-color: rgba(255, 230, 120, 0.45);
+  }
+}
+
+// ==================== 显示效果：渐变文字 ====================
+
+.o-text--gradient {
+  // 渐变背景通过 CSS 变量注入，JS 只负责设置 --o-text-gradient 变量
+  background-image: var(--o-text-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+// ==================== 显示效果：文字阴影 ====================
+
+.o-text--shadow {
+  // 由内联样式动态设置
+}
+
+// ==================== 显示效果：发光 ====================
+
+.o-text--glow {
+  // 由内联样式动态设置
+}
+
+// ==================== 显示效果：文字描边 ====================
+//
+// 架构说明（2026-06 重构修复）：
+// - 基类 .o-text--stroke 永远推送（提供 paint-order + 8 方向锐利 text-shadow）
+// - mode 类 (outline / inline / double) 只负责 -webkit-text-stroke 的具体颜色+宽度
+// - 避免之前 mode='outline' 时只有 `o-text--stroke-outline` 类而找不到基类样式的 bug
+// - 使用 paint-order: stroke fill 让描边绘制在文字外侧，避免 -webkit-text-stroke
+//   居中绘制导致文字变粗的问题
+// - 通过多层 text-shadow（最多 8 个方向，0px blur）增强描边锐利度，
+//   比 -webkit-text-stroke 在不同浏览器下渲染更一致
+// - 通过 CSS 变量（--o-stroke-color / --o-stroke-width）由 JS 注入，
+//   避免 inline style 覆盖类的灵活性
+// - 深色模式自动增强对比度
+
+.o-text--stroke {
+  // 锐利描边增强（8 方向 text-shadow，blur=0px）
+  text-shadow: var(--o-stroke-shadows, none);
+
+  // 默认外描边：paint-order: stroke fill 让描边绘制在文字外侧
+  paint-order: stroke fill;
+  -webkit-text-stroke: var(--o-stroke-width, 1px) var(--o-stroke-color, currentColor);
+  text-stroke: var(--o-stroke-width, 1px) var(--o-stroke-color, currentColor);
+
+  // 内描边：paint-order 颠倒，描边在文字内部
+  &-inline {
+    paint-order: fill stroke;
+  }
+
+  // 双层描边：外层（粗） + 内层（细）通过 text-shadow 模拟内层细描边
+  &-double {
+    -webkit-text-stroke: var(--o-stroke-width-outer, 2px) var(--o-stroke-color-outer, currentColor);
+    text-stroke: var(--o-stroke-width-outer, 2px) var(--o-stroke-color-outer, currentColor);
+  }
+
+  // 深色模式：增强描边颜色对比（变量覆盖）
+  [data-theme='dark'] & {
+    --o-stroke-color: var(--o-stroke-color-dark, var(--o-stroke-color, currentColor));
+  }
+}
+
+// ==================== 显示效果：挖空/空心 ====================
+//
+// 重新定义 hollow（2026-06）：
+// - 默认 mode='outline'：使用 -webkit-text-stroke + 透明填充，实现真正的"空心字"
+//   （与 stroke.filled=false 概念统一，废弃"模糊"作为默认）
+// - mode='blur'：保留旧版"模糊文字"行为作为向后兼容
+// - mode='glass'：玻璃态镂空（描边 + 背景模糊光晕）
+// - hover 填充效果（fillable）：主流 UI 库都支持此交互
+
+.o-text--hollow {
+  // 模式1：外描边空心（默认推荐）
+  // 重要修复（2026-06）：只设 -webkit-text-fill-color: transparent，不设 color: transparent
+  //   - currentColor 会引用 color 的计算值
+  //   - 如果 color: transparent，currentColor 也变 transparent，导致描边不可见
+  //   - 保留 color 为 tony 色，仅用 text-fill-color 覆盖填充
+  &-outline {
+    -webkit-text-stroke: var(--o-hollow-stroke-width, 1.5px) var(--o-hollow-stroke-color, currentColor);
+    text-stroke: var(--o-hollow-stroke-width, 1.5px) var(--o-hollow-stroke-color, currentColor);
+    // 仅设 fill-color 为透明，保留 color 属性以便 currentColor 仍为有色调
+    -webkit-text-fill-color: transparent;
+    transition:
+      -webkit-text-fill-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  // 模式2：模糊文字（向后兼容，2026-06 之前的行为）
+  // 修复：使用 -webkit-text-fill-color: transparent，避免改变 color 属性
+  &-blur {
+    -webkit-text-fill-color: transparent;
+    filter: blur(var(--o-hollow-blur, 4px));
+  }
+
+  // 模式3：玻璃态镂空
+  // 修复：保留 color，仅设 text-fill-color，避免 currentColor 计算为 transparent
+  &-glass {
+    -webkit-text-stroke: 1px var(--o-hollow-stroke-color, currentColor);
+    text-stroke: 1px var(--o-hollow-stroke-color, currentColor);
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 6px var(--o-hollow-backdrop, rgba(255, 255, 255, 0.5));
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  // hover 填充（需配合 .o-text--hollow-fillable 类使用）
+  &-fillable {
+    cursor: pointer;
+  }
+  // hover 填充：覆盖 fill-color 恢复可见填充，但 color 一直保留为 tony 色
+  &-fillable.o-text--hollow-outline:hover {
+    -webkit-text-fill-color: var(--o-hollow-fill-color, currentColor);
+  }
+  &-fillable.o-text--hollow-blur:hover,
+  &-fillable.o-text--hollow-glass:hover {
+    -webkit-text-fill-color: var(--o-hollow-fill-color, currentColor);
+    filter: none;
+  }
+}
+
+// ==================== 显示效果：轮廓文字 ====================
+
+.o-text--outline {
+  // 由内联样式动态设置
+}
+
+// ==================== 显示效果：外发光 + 内阴影 ====================
+
+.o-text--lifted {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+// ==================== 交互效果：Hover ====================
+
+// 颜色变化
+.o-text--hover-color {
+  cursor: pointer;
+  transition: color 0.25s ease;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+
+// 缩放
+.o-text--hover-scale {
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// 下划线动画
+.o-text--hover-underline {
+  cursor: pointer;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: currentColor;
+    transition: width 0.3s ease;
+  }
+
+  &:hover::after {
+    width: 100%;
+  }
+}
+
+// 透明度
+.o-text--hover-opacity {
+  cursor: pointer;
+  transition: opacity 0.25s ease;
+
+  &:hover {
+    opacity: 0.6;
+  }
+}
+
+// 高亮背景
+.o-text--hover-highlight {
+  cursor: pointer;
+  transition: background-color 0.25s ease, color 0.25s ease;
+
+  &:hover {
+    background: rgba(24, 144, 255, 0.1);
+    border-radius: 3px;
+  }
+}
+
+// 抖动
+.o-text--hover-wobble {
+  cursor: pointer;
+
+  &:hover {
+    animation: o-text-wobble 0.4s ease-in-out;
+  }
+}
+
+@keyframes o-text-wobble {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px) rotate(-1deg); }
+  40% { transform: translateX(2px) rotate(1deg); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+
+// 上浮
+.o-text--hover-lift {
+  cursor: pointer;
+  transition: transform 0.25s ease, filter 0.25s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  }
+}
+
+// 闪烁
+.o-text--hover-flash {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    animation: o-text-flash 0.6s ease-in-out 3;
+  }
+}
+
+@keyframes o-text-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+// ==================== 交互效果：点击涟漪 ====================
+
+.o-text__ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: o-text-ripple 0.4s ease-out forwards;
+}
+
+// ==================== 动画效果：进入动画 ====================
+
+// 进入动画的两种模式：
+// - once: 播放一次后停止（默认）
+// - infinite: 循环播放（用于持续展示效果）
+
+// ── 基础进入动画 ──
+
+// 淡入
+@keyframes o-text-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// 上滑
+@keyframes o-text-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 下滑
+@keyframes o-text-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 左滑
+@keyframes o-text-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// 右滑
+@keyframes o-text-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// 缩放淡入
+@keyframes o-text-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 闪烁进入
+@keyframes o-text-blink-in {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  40% { opacity: 0; }
+  60% { opacity: 1; }
+  80% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+// 弹跳进入
+@keyframes o-text-bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 模糊淡入
+@keyframes o-text-blur-in {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+// 打字机光标
+@keyframes o-text-typing-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+// ── 持续展示动画（可循环） ──
+
+// 呼吸缩放（柔和放大缩小）
+@keyframes o-text-enter-breathe {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: brightness(1.1);
+  }
+}
+
+// 轻微起伏（上下飘浮）
+@keyframes o-text-enter-float {
+  0%, 100% {
+    transform: translateY(0);
+    filter: brightness(1);
+  }
+  25% {
+    transform: translateY(-8px);
+    filter: brightness(1.05);
+  }
+  50% {
+    transform: translateY(-12px);
+    filter: brightness(1.08);
+  }
+  75% {
+    transform: translateY(-8px);
+    filter: brightness(1.05);
+  }
+}
+
+// 脉冲闪耀（颜色/透明度脉动）
+@keyframes o-text-enter-glow {
+  0%, 100% {
+    opacity: 0.7;
+    text-shadow: 0 0 4px currentColor;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 12px currentColor, 0 0 20px currentColor;
+  }
+}
+
+// 摇晃进入（左右轻微摆动）
+@keyframes o-text-enter-sway {
+  0%, 100% {
+    transform: rotate(0deg);
+    opacity: 0.8;
+  }
+  25% {
+    transform: rotate(2deg);
+  }
+  75% {
+    transform: rotate(-2deg);
+  }
+}
+
+// 渐显（透明度渐变显示）
+@keyframes o-text-enter-reveal {
+  from { opacity: 0; }
+  to { opacity: 0.95; }
+}
+
+// 缩放呼吸（配合文字大小变化）
+@keyframes o-text-enter-scale-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}
+
+// 边框流光（描边闪烁）
+@keyframes o-text-enter-border-flow {
+  0% {
+    text-shadow: 0 0 2px currentColor, 0 0 4px currentColor;
+    opacity: 0.8;
+  }
+  50% {
+    text-shadow: 0 0 8px currentColor, 0 0 16px currentColor;
+    opacity: 1;
+  }
+  100% {
+    text-shadow: 0 0 2px currentColor, 0 0 4px currentColor;
+    opacity: 0.8;
+  }
+}
+
+// 翻转进入（3D 翻转显示）
+@keyframes o-text-enter-flip {
+  0% {
+    transform: perspective(400px) rotateX(-90deg);
+    opacity: 0;
+  }
+  50% {
+    transform: perspective(400px) rotateX(10deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: perspective(400px) rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+// 滑入旋转（滑动同时轻微旋转）
+@keyframes o-text-enter-slide-spin {
+  from {
+    opacity: 0;
+    transform: translateX(-30px) rotate(-5deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotate(0deg);
+  }
+}
+
+// 弹性进入（带有回弹效果）
+@keyframes o-text-enter-elastic {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(-10px);
+  }
+  60% {
+    opacity: 0.9;
+    transform: scale(1.05) translateY(2px);
+  }
+  80% {
+    transform: scale(0.98) translateY(-1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+// 逐字显示效果（用于 JS 配合）
+@keyframes o-text-enter-char-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 震动进入（轻微抖动）
+@keyframes o-text-enter-tremble {
+  0%, 100% { transform: translateX(0); opacity: 0.7; }
+  10% { transform: translateX(-1px); }
+  20% { transform: translateX(1px); }
+  30% { transform: translateX(-1px); }
+  40% { transform: translateX(1px); }
+  50% { transform: translateX(0); opacity: 1; }
+}
+
+// 星光闪烁（模拟星星眨眼）
+@keyframes o-text-enter-sparkle {
+  0%, 100% {
+    opacity: 0.6;
+    text-shadow: 0 0 2px currentColor;
+  }
+  30% {
+    opacity: 1;
+    text-shadow: 0 0 8px currentColor, 0 0 12px currentColor;
+  }
+  60% {
+    opacity: 0.8;
+    text-shadow: 0 0 4px currentColor;
+  }
+}
+
+// ── 进入动画应用（一次性） ──
+
+.o-text--anim-fade {
+  animation: o-text-fade-in 0.5s ease-out both;
+}
+
+.o-text--anim-slide-up {
+  animation: o-text-slide-up 0.6s ease-out both;
+}
+
+.o-text--anim-slide-down {
+  animation: o-text-slide-down 0.6s ease-out both;
+}
+
+.o-text--anim-slide-left {
+  animation: o-text-slide-left 0.6s ease-out both;
+}
+
+.o-text--anim-slide-right {
+  animation: o-text-slide-right 0.6s ease-out both;
+}
+
+.o-text--anim-zoom {
+  animation: o-text-zoom-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.o-text--anim-blink {
+  animation: o-text-blink-in 0.8s ease-in-out both;
+}
+
+.o-text--anim-bounce {
+  animation: o-text-bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.o-text--anim-blur-in {
+  animation: o-text-blur-in 0.8s ease-out both;
+}
+
+.o-text--anim-elastic {
+  animation: o-text-enter-elastic 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.o-text--anim-flip {
+  animation: o-text-enter-flip 0.7s ease-out both;
+  transform-origin: center top;
+}
+
+.o-text--anim-slide-spin {
+  animation: o-text-enter-slide-spin 0.6s ease-out both;
+}
+
+.o-text--anim-tremble {
+  animation: o-text-enter-tremble 0.6s ease-out both;
+}
+
+.o-text--anim-char-reveal {
+  animation: o-text-enter-char-reveal 0.4s ease-out both;
+}
+
+// ── 进入动画应用（持续展示 - 循环） ──
+
+// 持续呼吸
+.o-text--anim-breathe {
+  animation: o-text-enter-breathe 2.5s ease-in-out infinite both;
+}
+
+// 持续飘浮
+.o-text--anim-float {
+  animation: o-text-enter-float 2s ease-in-out infinite both;
+}
+
+// 持续发光脉动
+.o-text--anim-glow {
+  animation: o-text-enter-glow 1.8s ease-in-out infinite both;
+}
+
+// 持续摇晃
+.o-text--anim-sway {
+  animation: o-text-enter-sway 1.5s ease-in-out infinite both;
+  transform-origin: center center;
+}
+
+// 持续缩放脉冲
+.o-text--anim-scale-pulse {
+  animation: o-text-enter-scale-pulse 1.8s ease-in-out infinite both;
+}
+
+// 持续描边流光
+.o-text--anim-border-flow {
+  animation: o-text-enter-border-flow 2s ease-in-out infinite both;
+}
+
+// 持续渐显
+.o-text--anim-reveal {
+  animation: o-text-enter-reveal 1s ease-out both;
+}
+
+// 持续星光闪烁
+.o-text--anim-sparkle {
+  animation: o-text-enter-sparkle 2.5s ease-in-out infinite both;
+}
+
+// 持续打字机光标闪烁（独立使用）
+.o-text--anim-typing {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid currentColor;
+  animation: o-text-typing-cursor 0.7s step-end infinite;
+}
+
+// ==================== 循环动画 ====================
+
+// 脉动
+@keyframes o-text-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+// 闪烁
+@keyframes o-text-loop-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+// 上下弹跳（区别于 wave 的上下起伏）
+@keyframes o-text-loop-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+  25% {
+    transform: translateY(-10px) scale(1.02);
+    filter: brightness(1.08);
+  }
+  50% {
+    transform: translateY(-16px) scale(1.04);
+    filter: brightness(1.12);
+  }
+  75% {
+    transform: translateY(-10px) scale(1.02);
+    filter: brightness(1.08);
+  }
+}
+
+// 左右抖动
+@keyframes o-text-loop-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+// 旋转
+@keyframes o-text-loop-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// 飘动
+@keyframes o-text-loop-wander {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(3px, -3px) rotate(2deg); }
+  50% { transform: translate(0, -5px) rotate(0deg); }
+  75% { transform: translate(-3px, -3px) rotate(-2deg); }
+}
+
+// 波浪（柔和起伏，与 bounce 区别：幅度小但有横向摆动感）
+@keyframes o-text-loop-wave {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.85;
+  }
+  33% {
+    transform: translateY(-5px) rotate(1deg);
+    opacity: 1;
+  }
+  66% {
+    transform: translateY(-2px) rotate(-0.5deg);
+    opacity: 0.95;
+  }
+}
+
+// 光泽流动（渐变移动）
+@keyframes o-text-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+// 渐变流动（文字渐变色流动）
+@keyframes o-text-gradient-flow {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+// 逐字波浪
+@keyframes o-text-char-wave {
+  0%, 100% {
+    transform: translateY(0);
+    filter: brightness(1);
+  }
+  50% {
+    transform: translateY(-8px);
+    filter: brightness(1.2);
+  }
+}
+
+// 倒计时（逐渐消失）
+@keyframes o-text-countdown {
+  from {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  to {
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+}
+
+// 应用循环动画类
+.o-text--loop-pulse {
+  animation: o-text-pulse 1.5s ease-in-out infinite;
+}
+
+.o-text--loop-blink {
+  animation: o-text-loop-blink 1.2s ease-in-out infinite;
+}
+
+.o-text--loop-bounce {
+  animation: o-text-loop-bounce 1s ease-in-out infinite;
+}
+
+.o-text--loop-shake {
+  animation: o-text-loop-shake 0.8s ease-in-out infinite;
+}
+
+.o-text--loop-rotate {
+  animation: o-text-loop-rotate 3s linear infinite;
+  display: inline-block;
+}
+
+.o-text--loop-wander {
+  animation: o-text-loop-wander 3s ease-in-out infinite;
+}
+
+.o-text--loop-wave {
+  animation: o-text-loop-wave 1.2s ease-in-out infinite;
+}
+
+.o-text--loop-char-wave,
+.o-text--anim-char-wave {
+  // 需要 JS 将文字拆分为 char 元素后使用
+}
+
+.o-text--loop-char-wave .o-text__char,
+.o-text--anim-char-wave .o-text__char {
+  display: inline-block;
+  animation: o-text-char-wave 1.5s ease-in-out infinite;
+}
+
+.o-text--loop-char-wave .o-text__char:nth-child(2n) {
+  animation-delay: 0.2s;
+}
+
+.o-text--loop-char-wave .o-text__char:nth-child(3n) {
+  animation-delay: 0.4s;
+}
+
+.o-text--loop-char-wave .o-text__char:nth-child(4n) {
+  animation-delay: 0.6s;
+}
+
+.o-text--loop-char-wave .o-text__char:nth-child(5n) {
+  animation-delay: 0.8s;
+}
+
+.o-text--anim-char-wave .o-text__char:nth-child(2n) {
+  animation-delay: 0.2s;
+}
+
+.o-text--anim-char-wave .o-text__char:nth-child(3n) {
+  animation-delay: 0.4s;
+}
+
+// 光泽流动
+.o-text--loop-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: o-text-shimmer 2s linear infinite;
+}
+
+// 渐变流动
+.o-text--loop-gradient-flow {
+  background-size: 200% auto;
+  animation: o-text-gradient-flow 3s linear infinite;
+}
+
+// 倒计时
+.o-text--loop-countdown {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: currentColor;
+    opacity: 0.3;
+    animation: o-text-countdown 10s linear forwards;
+    transform-origin: left;
+  }
+}
+
+// ==================== 打字机光标 ====================
+
+.o-text__cursor {
+  display: inline-block;
+  margin-left: 2px;
+  animation: o-text-typing-cursor 0.7s step-end infinite;
+}
+
+// ==================== 前缀 / 后缀图标 ====================
+
+.o-text__icon {
+  display: inline-flex;
+  vertical-align: middle;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.o-text__icon--prefix {
+  // margin-right 由 prefixIconStyle 计算属性注入（支持用户自定义 spacing）
+}
+
+.o-text__icon--suffix {
+  // margin-left 由 suffixIconStyle 计算属性注入（支持用户自定义 spacing）
+}
+
+// ==================== 复制相关图标 ====================
+
+// hover 时显示的复制图标（替代原 📋 emoji）
+.o-text__copy-hint-icon {
+  display: inline-flex;
+  margin-left: 4px;
+  opacity: 0.7;
+  vertical-align: middle;
+  animation: o-text-fade-in 0.2s ease-out;
+  pointer-events: none;
+}
+
+// ==================== 复制成功提示 ====================
+
+.o-text__copy-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  border-radius: 4px;
+  animation: o-text-fade-in 0.2s ease-out;
+
+  .o-text__copy-tip-icon {
+    color: #fff;
+    flex-shrink: 0;
+  }
+}
+
+// ==================== 响应式适配 ====================
+
+@media (max-width: 768px) {
+  .o-text {
+    @each $size, $config in $o-text-sizes-responsive {
+      &--#{$size} {
+        font-size: map.get($config, font-size);
+      }
+    }
+  }
+}
+
+// 深色模式适配由主题系统统一提供（:root[data-theme=dark]），
+// 本文件不再维护 dark map，避免双重来源。
