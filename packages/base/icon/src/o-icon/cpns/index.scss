@@ -1,0 +1,158 @@
+@use 'sass:math';
+
+// =============================================================================
+// OIcon 样式
+// 设计目标:
+// - 1em 等比缩放(随父级 font-size 联动)
+// - 颜色继承 currentColor(支持外部 color 着色)
+// - 命名尺寸预设 5 档 + 数字尺寸走 inline style(组件层处理)
+// - flip / spin / disabled 通过修饰类单独承载,互不冲突
+// =============================================================================
+
+// 命名尺寸映射(可被上层 SCSS 覆盖,使用 !default)
+$o-icon-sizes: (
+  tiny: 12px,
+  small: 16px,
+  medium: 20px,
+  large: 24px,
+  huge: 32px,
+) !default;
+
+// 旋转动画周期
+$o-icon-spin-duration: 1.5s !default;
+
+// 过渡
+$o-icon-transition: opacity 0.2s ease, color 0.2s ease !default;
+
+// -----------------------------------------------------------------------------
+// 根容器
+// -----------------------------------------------------------------------------
+.o-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  color: currentColor;
+  vertical-align: middle;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: $o-icon-transition;
+  position: relative;
+
+  // SVG 内容层:撑满容器,内部 svg 继承 currentColor
+  &__svg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+
+    :deep(svg) {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+      display: block;
+    }
+  }
+
+  // 字体图标 / Emoji / 兜底字符共用容器
+  &__inner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+  }
+
+  // 兜底字符(图标找不到时显示 '?')
+  &__fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-family: inherit;
+    font-style: normal;
+    font-weight: 600;
+    opacity: 0.5;
+  }
+
+  // 图片图标(img 根元素会直接渲染,这里保留 fallback 兼容)
+  &__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 命名尺寸(根据 SCSS map 生成 5 档修饰类)
+// -----------------------------------------------------------------------------
+@each $name, $size in $o-icon-sizes {
+  .o-icon--#{$name} {
+    font-size: $size;
+    width: $size;
+    height: $size;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 旋转动画(spin)
+// -----------------------------------------------------------------------------
+.o-icon--spin {
+  animation: o-icon-spin $o-icon-spin-duration linear infinite;
+  // 动画过程中仍允许其它 transform(如 flip)叠加,这里只作用在 svg 子层
+  :deep(svg) {
+    animation: o-icon-spin $o-icon-spin-duration linear infinite;
+  }
+}
+
+@keyframes o-icon-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 翻转(flip)
+// -----------------------------------------------------------------------------
+.o-icon--flip-horizontal {
+  transform: scaleX(-1);
+}
+
+.o-icon--flip-vertical {
+  transform: scaleY(-1);
+}
+
+.o-icon--flip-both {
+  transform: scale(-1, -1);
+}
+
+// -----------------------------------------------------------------------------
+// 禁用态
+// -----------------------------------------------------------------------------
+.o-icon--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+// -----------------------------------------------------------------------------
+// 字体图标层(常见前缀约定:fa-/mdi-/icon-/iconfont-/bi-/ti-)
+// 由组件渲染 <i class="prefix icon-name"></i>,这里给基础字体图标做样式
+// -----------------------------------------------------------------------------
+.o-icon__font {
+  font-style: normal;
+  font-weight: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
