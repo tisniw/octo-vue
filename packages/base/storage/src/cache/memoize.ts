@@ -1,7 +1,4 @@
-/**
- * 同步函数记忆化。
- * 默认按 JSON.stringify(args) 作为 key,可选 keyResolver 自定义。
- */
+// 同步函数记忆化,默认按 JSON.stringify(args) 作为 key,可选 keyResolver 自定义
 export function memoize<Args extends any[], R>(
   fn: (...args: Args) => R,
   keyResolver?: (...args: Args) => string

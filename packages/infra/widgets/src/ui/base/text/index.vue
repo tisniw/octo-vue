@@ -36,6 +36,19 @@
     <!-- 打字机模式：只显示 displayedText，slot 不渲染 -->
     <template v-else-if="typingConfig">{{ displayedText }}</template>
 
+    <!-- 内置语法高亮：v-html 输出 token 化后的 HTML（仅 pre + highlight 启用时） -->
+    <!--
+      完整调用链：
+        1. slots.default() → getSlotTextContent() 提取源代码文本
+        2. onMounted / onUpdated 钩子同步到 slotSourceText（响应式 ref）
+        3. highlightedHtml computed 读取 slotSourceText + highlightResolved
+        4. highlight() → tokenize() → 按语言规则输出带 o-text__hl-xxx span 的 HTML
+        5. v-html 渲染输出
+      token 配色完全由 theme 主题组件包按当前激活视觉×主题注入 --ohl-* 变量，
+      组件层不持有任何主题状态，也不预设 light/dark/auto 等模式
+    -->
+    <template v-else-if="isHighlighted" v-html="highlightedHtml" />
+
     <!-- 默认：渲染 slot -->
     <slot v-else />
 
@@ -76,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, toRefs, useSlots } from 'vue'
+import { ref, computed, watch, onMounted, onUpdated, onUnmounted, nextTick, toRefs, useSlots } from 'vue'
 import { OIcon } from '@octovue/icon'
 
 defineOptions({ name: 'OText' })
@@ -113,6 +126,9 @@ import {
   type PreparedTextWithSegments,
   type LayoutLine,
 } from './cpns/layout'
+
+import { highlight } from './cpns/highlight'
+import type { HighlightConfig, HighlightLanguage } from './cpns/highlight'
 
 // ==================== Props ====================
 
@@ -202,6 +218,92 @@ const charWaveChars = computed<string[]>(() => {
   if (!charWaveText.value) return []
   return charWaveText.value.split('')
 })
+
+// ==================== 内置语法高亮 ====================
+
+/**
+ * 规范化高亮配置：合并 props.highlight（多种形态）+ props.codeLanguage（便捷指定语言）
+ *
+ *   props.highlight:
+ *     undefined / false / ''  → 不启用（返回 null）
+ *     true                    → 启用（默认 javascript）
+ *     'typescript'            → 启用，language='typescript'
+ *     { language }            → 启用，按配置
+ *
+ *   props.codeLanguage 与 props.highlight.language 同义，后者优先
+ *
+ * token 配色完全由 theme 主题组件包按当前激活视觉×主题注入 --ohl-* 变量，
+ * 组件层不持有任何主题状态，也不预设 light/dark/auto 等模式。
+ */
+const highlightResolved = computed<HighlightConfig | null>(() => {
+  const h = props.highlight
+  if (h === false || h === undefined || h === null || h === '') return null
+  if (h === true) {
+    return {
+      language: props.codeLanguage ?? 'javascript',
+    }
+  }
+  if (typeof h === 'string') {
+    return {
+      language: (h as HighlightLanguage) ?? props.codeLanguage ?? 'javascript',
+    }
+  }
+  return {
+    language: h.language ?? props.codeLanguage ?? 'javascript',
+  }
+})
+
+/** 是否启用高亮（仅在 tag=pre 时才生效） */
+const isHighlighted = computed(() =>
+  computedTag.value === 'pre' && highlightResolved.value !== null,
+)
+
+/**
+ * slot 内的源代码文本缓存
+ * 独立成 ref 是为了在 onUpdated 钩子里主动同步,
+ * 避免父组件异步更新 slot 内容（如 v-if 条件渲染、异步数据加载）时
+ * computed 仅依赖 slots.default() 引用而在某些场景下漏触发
+ */
+const slotSourceText = ref('')
+
+/** 主动从 slot 重新提取源代码文本 */
+function refreshSlotText() {
+  if (!isHighlighted.value) {
+    slotSourceText.value = ''
+    return
+  }
+  const text = getSlotTextContent()
+  // 即便 text 为空也写入,确保 reactive 链路可见
+  if (text !== slotSourceText.value) slotSourceText.value = text
+}
+
+/**
+ * 高亮后的 HTML 字符串
+ * - 从 slotSourceText 读取源代码（响应式 ref）
+ * - 经过内置 highlight() 处理后生成可安全 v-html 的字符串
+ * - 通过 onMounted / onUpdated 钩子保证 slot 异步更新时也能重新高亮
+ */
+const highlightedHtml = computed(() => {
+  if (!isHighlighted.value) return ''
+  if (!slotSourceText.value) return ''
+  return highlight(slotSourceText.value, highlightResolved.value!)
+})
+
+// 初始化 + slot 异步更新 hook
+onMounted(() => {
+  refreshSlotText()
+})
+onUpdated(() => {
+  // Vue 完成 patch 后重读 slot,保证异步条件渲染、动态数据加载时源文本同步
+  refreshSlotText()
+})
+
+// 配置变化时主动重读
+watch(
+  () => [props.highlight, props.codeLanguage, computedTag.value] as const,
+  refreshSlotText,
+  { immediate: true },
+)
 
 // 逐字波浪：延迟初始化文本
 function initCharWaveText() {
@@ -336,13 +438,15 @@ const allClasses = computed<string[]>(() => {
   classes.push(`o-text--${props.tony}`)
   // 标题标签(h1-h6)在 SCSS 中有专属字号+字重,跳过通用 size/weight 类避免覆盖
   const isHeading = HEADING_TAGS.has(computedTag.value)
-  if (!isHeading) {
+  // pre + highlight 启用时,源代码显示走 token 配色,跳过 size/weight 类
+  // （SCSS 中 o-text--pre + o-text--highlighted 已锁定等宽 + 合理字号,不再被通用 size 覆盖）
+  if (!isHeading && !isHighlighted.value) {
     classes.push(`o-text--${props.size}`)
   }
   // 标题标签跳过默认 weight(normal=400),保留标签专属字重(h1=700/h2-h3=600/h4-h6=500)
   // 用户显式传非默认 weight 时仍生效(e.g. <o-text h1 weight="bold">)
   const weightNum = WEIGHT_MAP[props.weight] ?? props.weight
-  if (!isHeading || props.weight !== 'normal') {
+  if (!isHighlighted.value && (!isHeading || props.weight !== 'normal')) {
     classes.push(`o-text--weight-${weightNum}`)
   }
 
@@ -354,6 +458,13 @@ const allClasses = computed<string[]>(() => {
 
   // 等宽
   if (props.monospace) classes.push('o-text--mono')
+
+  // 内置语法高亮（仅 pre + highlight 启用时）
+  // 配色完全由 theme 主题组件包按当前激活视觉×主题注入 --ohl-* 变量，
+  // 组件层不再推送 hl-light / hl-dark / hl-auto 之类硬编码主题类。
+  if (isHighlighted.value) {
+    classes.push('o-text--highlighted')
+  }
 
   // 变换
   if (props.uppercase) classes.push('o-text--uppercase')

@@ -6,6 +6,7 @@
 
 import type { WhiteSpaceMode, WordBreakMode } from './analysis'
 import type { FunctionalSemantic } from '@octovue/theme'
+import type { HighlightProp, HighlightLanguage } from './highlight'
 
 // ==================== 基础枚举 ====================
 
@@ -406,6 +407,21 @@ export interface TextProps {
   outline?: TextOutlineConfig
   /** 等宽字体（代码风格） */
   monospace?: boolean
+  /**
+   * 是否启用内置语法高亮（仅 tag=pre 时生效）
+   *
+   *   undefined / false → 不启用
+   *   true              → 启用，默认 javascript
+   *   HighlightConfig   → 启用并应用配置
+   *
+   * 启用后，组件会把 slot 文本经过内置的轻量 token 化处理（零外部依赖），
+   * 自动套上 .o-text__hl-* 类，颜色由 theme 主题组件包按当前激活视觉×主题注入 --ohl-* 变量。
+   *
+   * 注：可独立传 codeLanguage 指定语言，等价于 { highlight: { language: codeLanguage } }。
+   */
+  highlight?: HighlightProp
+  /** 便捷指定高亮语言（不传 highlight 时，本字段不生效） */
+  codeLanguage?: HighlightLanguage
   /** 大写转换 */
   uppercase?: boolean
   /** 小写转换 */

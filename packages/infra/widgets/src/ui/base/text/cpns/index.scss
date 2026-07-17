@@ -1,22 +1,263 @@
 /**
  * o-text 文本组件主样式
- * 已合并 styles/index.scss + styles/variables.scss → cpns/{index.scss, _variables.scss}(2026-06)
+ * 已合并 styles/index.scss + styles/variables.scss + cpns/_variables.scss
+ * → cpns/index.scss (2026-07)
  *
- * 6 严格语义对齐主题系统 FUNCTIONAL_SEMANTICS:
- *   default / success / error / warning / info / emphasis
- * 已移除 legacy 别名(core / muted / faint / secondary / accent)
+ * 2026-07 token 对齐：颜色 CSS 变量名统一改为 octo-vue 主题系统的 4 套契约：
+ *   --oc-{type}-{field}-{scale}                   基础原色
+ *   --or-{type}-{field}-{role}-{scale}            语义基色
+ *   --os-{type}-{field}-{state}-{scale}           状态色
+ *   --osr-{type}-{field}-{role}-{state}-{scale}   状态+语义
+ * 变量由 packages/base/theme/src/core/derive/{oc,or,os,osr}.ts 派生
+ *
+ * 语义 role: success / warning / error / danger / info
+ * 6 档文本语义色调 (default + 5 个语义 role) 严格对齐 TextColor 通道
+ *   - emphasis 为组件层老别名，本文件临时桥接到 info role，后续可在 defaultSemanticColor 中补充 emphasis
+ //   - fallback hex 从 Ant Design 旧色板升级到 work/theme-system primitives 色板
+ //     (neutral/slate/gray/indigo/emerald/sky/violet/amber/rose)
+ //   - 视觉×主题 二维矩阵由 theme 主题组件包统一派生完整 token，
+ //     本文件不再维护按主题分组的 map
  *
  * 字号 / 字重 / 色调 全部由 @each 遍历 $o-text-themes / $o-text-sizes / $o-text-weights
  * 自动生成 .o-text--{size} / .o-text--weight-{weight} / .o-text--{tony} 类样式
  *
- * 深色模式由主题系统统一提供（:root[data-theme=dark]），
- * 本文件不再维护 dark map,避免双重来源
- *
- * 包含：基础 / 显示效果 / 交互效果 / 动画效果
+ * 包含：变量 / 基础 / 显示效果 / 交互效果 / 动画效果
  */
 
 @use 'sass:map';
-@use './variables' as *;
+
+// ==================== 视觉差异化兜底层（无 token 对应的纯装饰）====================
+//
+// 三个子模块见 ./visuals/ 目录：
+//   1. common          通用装饰差异化 ─ 标题装饰线 / pre 滚动条 / blockquote / drop-cap / 链接 icon /
+//                                     ::selection / 列表 / hr 装饰 / 响应式微调
+//   2. highlight       内置语法高亮配色（GitHub Light / One Dark 双档，CSS 变量可覆盖）
+//   3. user-extensions 用户自定义钩子（CSS 变量 + 自定义类 + data 属性 + 业务预设）
+//
+// 加载顺序：common → highlight → user-extensions（由 ./visuals/index.scss 内部控制）
+// 引入位置：必须在样式输出之前加载，确保所有 .o-text 子类变体可见
+//
+// 设计原则：
+//   主题系统（packages/base/theme/src/core/）已派生完整 token（color 4 通道 +
+//   spacing/radius/shadow/motion/font/opacity），同名 var(--xxx) 消费即可
+//   本目录不写主题色矩阵（已在下方 $o-text-themes 自动生成 6 档主题色类）
+//   本目录不写主题特殊视觉（dark/guofeng 由主题系统 dim/traditional 等预设覆盖 token）
+@use './visuals';
+
+// ==================== o-text 样式变量（原 cpns/_variables.scss 内容）====================
+//
+// 颜色通道严格走主题系统的 4 套 CSS 变量契约（derive/oc.ts · or.ts · os.ts · osr.ts）：
+//   OC  基础原色     --oc-{type}-{field}-{scale}    示例: --oc-text-primary-500
+//   OR  语义基色     --or-{type}-{field}-{role}-{scale}   示例: --or-text-primary-error-500
+//   OS  状态色       --os-{type}-{field}-{state}-{scale}  示例: --os-text-primary-hover-500
+//   OSR 状态+语义    --osr-{type}-{field}-{role}-{state}-{scale}
+//
+// 12 baseColorType: background / component / text / link / border / overlay /
+//                  dataViz / selection / skeleton / shadow / scrollbar / gradient
+// 11 色阶: 50/100/200/300/400/500/600/700/800/900/950（由 scale.ts expandScale 派生）
+// 语义 role（defaultSemanticColor）: success / warning / error / danger / info
+//   - 本文件中的 emphasis 色未在主题系统中定义 临时桥接到 info role（蓝色），后续如需可补充 emphasis role
+//   - 视觉×主题 二维矩阵由 theme 主题组件包统一派生完整变量
+//     本文件不维护按主题分组的变量 map
+//
+// 字号/字重/色调 全部由本文件中 @each 遍历 map 自动生成类样式
+
+// ── 尺寸映射 ──
+
+$o-text-sizes: (
+  xs: (
+    font-size: var(--text-xs),
+    line-height: 1.4,
+    letter-spacing: 0.05em
+  ),
+  sm: (
+    font-size: var(--text-sm),
+    line-height: 1.5,
+    letter-spacing: 0.02em
+  ),
+  md: (
+    font-size: var(--text-sm),
+    line-height: 1.5,
+    letter-spacing: 0
+  ),
+  lg: (
+    font-size: var(--text-base),
+    line-height: 1.6,
+    letter-spacing: -0.01em
+  ),
+  xl: (
+    font-size: var(--text-lg),
+    line-height: 1.6,
+    letter-spacing: -0.02em
+  ),
+  '2xl': (
+    font-size: var(--text-xl),
+    line-height: 1.6,
+    letter-spacing: -0.02em
+  )
+) !default;
+
+// 响应式尺寸（移动端）
+$o-text-sizes-responsive: (
+  xs: (font-size: var(--text-xs)),
+  sm: (font-size: var(--text-xs)),
+  md: (font-size: var(--text-sm)),
+  lg: (font-size: var(--text-base)),
+  xl: (font-size: var(--text-base)),
+  '2xl': (font-size: var(--text-lg))
+) !default;
+
+// ── 标题标签默认样式 ──
+$o-text-heading-sizes: (
+  h1: (
+    font-size: var(--text-3xl),
+    line-height: 1.2,
+    font-weight: 700,
+    letter-spacing: -0.02em
+  ),
+  h2: (
+    font-size: var(--text-2xl),
+    line-height: 1.25,
+    font-weight: 600,
+    letter-spacing: -0.01em
+  ),
+  h3: (
+    font-size: var(--text-xl),
+    line-height: 1.3,
+    font-weight: 600,
+    letter-spacing: 0
+  ),
+  h4: (
+    font-size: var(--text-lg),
+    line-height: 1.4,
+    font-weight: 500,
+    letter-spacing: 0
+  ),
+  h5: (
+    font-size: var(--text-base),
+    line-height: 1.5,
+    font-weight: 500,
+    letter-spacing: 0
+  ),
+  h6: (
+    font-size: var(--text-sm),
+    line-height: 1.5,
+    font-weight: 500,
+    letter-spacing: 0
+  ),
+  p: (
+    font-size: var(--text-sm),
+    line-height: 1.6,
+    font-weight: 400,
+    letter-spacing: 0
+  ),
+  span: (
+    font-size: var(--text-sm),
+    line-height: 1.5,
+    font-weight: 400,
+    letter-spacing: 0
+  ),
+  strong: (
+    font-size: var(--text-sm),
+    line-height: 1.5,
+    font-weight: 600,
+    letter-spacing: 0
+  ),
+  code: (
+    font-size: var(--text-xs),
+    line-height: 1.5,
+    font-weight: 400,
+    letter-spacing: 0,
+    font-family: var(--font-mono)
+  ),
+  pre: (
+    font-size: var(--text-xs),
+    line-height: 1.6,
+    font-weight: 400,
+    letter-spacing: 0,
+    font-family: var(--font-mono),
+    white-space: pre-wrap,
+    display: block,
+    background: var(--oc-background-base-100),
+    padding: 16px,
+    border-radius: var(--radius-md),
+    margin: 12px 0,
+    overflow-wrap: break-word,
+    word-break: break-word
+  )
+) !default;
+
+// 字重列表（7 档：thin / light / normal / medium / semibold / bold / extrabold）
+$o-text-weights: 100, 300, 400, 500, 600, 700, 800 !default;
+
+// 基础行高
+$o-text-line-height-base: 1.5 !default;
+
+// ── 颜色系统 ──
+
+// 主色（基础色，pre/code 标签背景、success 高亮等通用场景）
+// 主题系统 OC 契约: --oc-text-primary  走 text.type · primary.field · 700 阶
+// level 7 与 1f2937 (gray.800) 一致 对应正文主文字
+$o-text-color-primary: var(--oc-text-primary-700) !default;
+
+// 6 严格语义色调(6 档 1:1 对齐主题 FUNCTIONAL_SEMANTICS)
+// 走主题系统的 OR 契约: --or-text-primary-{role}-{scale}
+// 500 阶对应各语义 role 的 focus 状态值（语义基色策略 semanticBaseState = 'focus'）
+//
+// emphasis 为组件层别名，主题系统未定义 emphasis role，本文件临时桥接到 info role
+// （info.hover = #3b82f6 主是 Ant 蓝，与 emphasis 语义最接近）
+// 后续若在 defaultSemanticColor 中补充 emphasis role 可无缝切换
+//
+// 视觉×主题 二维矩阵由 theme 主题组件包统一派生完整变量
+// 本文件不维护按主题分组的变量 map
+$o-text-themes: (
+  default:  var(--oc-text-primary-700),       // text.primary.700  正文主文字
+  emphasis: var(--or-text-primary-info-500),  // ⚠️ emphasis → info 桥接 蓝色强调
+  success:  var(--or-text-primary-success-500),  // emerald.500  成功
+  warning:  var(--or-text-primary-warning-500),  // amber.500    警告
+  error:    var(--or-text-primary-error-500),    // rose.500     错误
+  info:     var(--or-text-primary-info-500),     // gray.500     信息
+) !default;
+
+// ── 快捷动画名称映射 ──
+
+// 进入动画名称
+$o-text-animation-map: (
+  none: none,
+  fade: o-text-fade-in,
+  slide-up: o-text-slide-up,
+  slide-down: o-text-slide-down,
+  slide-left: o-text-slide-left,
+  slide-right: o-text-slide-right,
+  zoom: o-text-zoom-in,
+  typing: o-text-typing,
+  blink: o-text-blink-in,
+  bounce: o-text-bounce-in,
+  blur-in: o-text-blur-in
+) !default;
+
+// 循环动画名称
+$o-text-loop-animation-map: (
+  none: none,
+  pulse: o-text-pulse,
+  blink: o-text-loop-blink,
+  bounce: o-text-loop-bounce,
+  shake: o-text-loop-shake,
+  rotate: o-text-loop-rotate,
+  wander: o-text-loop-wander,
+  wave: o-text-loop-wave,
+  shimmer: o-text-shimmer,
+  gradient-flow: o-text-gradient-flow,
+  char-wave: o-text-char-wave,
+  countdown: o-text-countdown
+) !default;
+
+// ── 主题变量 ──
+
+// Z-index 层
+$o-text-z-index-base: 1 !default;
+$o-text-z-index-ripple: 100 !default;
+$o-text-z-index-tip: 200 !default;
 
 // ==================== 涟漪动画 ====================
 
@@ -34,20 +275,22 @@
   display: inline-block;
   margin: 0;
   padding: 0;
-  font-family: inherit;
+  // 字体族由主题系统 --font-sans 提供（traditional 预设会覆盖为楷体宋体）
+  font-family: var(--font-sans);
   color: $o-text-color-primary;
   line-height: $o-text-line-height-base;
   text-decoration: none;
   user-select: text;
+  // 过渡由主题系统 motion token 提供：normal(240ms) + ease
   transition:
-    color 0.25s ease,
-    background-color 0.25s ease,
-    opacity 0.25s ease,
-    transform 0.2s ease;
+    color var(--duration-normal) var(--easing-ease),
+    background-color var(--duration-normal) var(--easing-ease),
+    opacity var(--duration-normal) var(--easing-ease),
+    transform var(--duration-fast) var(--easing-ease);
 
   // ── 禁用状态 ──
   &--disabled {
-    opacity: $o-text-disabled-opacity;
+    opacity: var(--opacity-disabled);
     cursor: not-allowed;
     pointer-events: none;
   }
@@ -94,38 +337,34 @@
     }
   }
 
-  // ── pre 标签额外样式（确保换行和显示正确） ──
+  // ── pre 标签补充样式（强制覆盖用户传的 size/line-height 类，保证块级和等宽字体一致） ──
   &--tag-pre {
     display: block !important;
-    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace !important;
-    font-size: 13px !important;
+    font-family: var(--font-mono) !important;
+    font-size: var(--text-sm) !important;
     line-height: 1.6 !important;
     white-space: pre-wrap !important;
     overflow-wrap: break-word !important;
     word-break: break-word !important;
-    // 走 default 主题的 fill-2 通道（弱化底色），不再是 core
-    background: var(--o-default-2, #f5f5f5) !important;
-    padding: 16px !important;
-    border-radius: 8px !important;
-    margin: 12px 0 !important;
+    // 其他展示值（padding/margin/border-radius/background）由 $o-text-heading-sizes 提供
 
     // code 嵌套在 pre 内时，继承 pre 的样式
     .o-text--tag-code {
-      display: block !important;
-      font-family: inherit !important;
-      font-size: inherit !important;
-      line-height: inherit !important;
-      white-space: inherit !important;
-      background: none !important;
-      padding: 0 !important;
-      margin: 0 !important;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      white-space: inherit;
+      background: none;
+      padding: 0;
+      margin: 0;
     }
   }
 
-  // ── code 标签样式（独立使用时） ──
+  // ── code 标签补充样式（独立使用时） ──
+  // 强制等宽字体：防止用户的 tony/weight/size 类改变 font-family
   &--tag-code {
-    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace !important;
-    font-size: 13px !important;
+    font-family: var(--font-mono) !important;
+    font-size: var(--text-sm) !important;
     line-height: 1.5 !important;
   }
 
@@ -170,7 +409,7 @@
   &--clamp {
     display: -webkit-box !important;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: var(--o-text-line-clamp, 2);
+    -webkit-line-clamp: var(--o-text-line-clamp);
     overflow: hidden;
   }
 
@@ -201,30 +440,30 @@
   // ── 装饰线 ──
   &--underline {
     text-decoration: underline;
-    text-decoration-color: var(--o-decoration-color, currentColor);
-    text-decoration-thickness: var(--o-decoration-thickness, 1px);
-    text-underline-offset: var(--o-decoration-offset, 3px);
+    text-decoration-color: var(--o-decoration-color);
+    text-decoration-thickness: var(--o-decoration-thickness);
+    text-underline-offset: var(--o-decoration-offset);
   }
 
   &--overline {
     text-decoration: overline;
-    text-decoration-color: var(--o-decoration-color, currentColor);
-    text-decoration-thickness: var(--o-decoration-thickness, 1px);
+    text-decoration-color: var(--o-decoration-color);
+    text-decoration-thickness: var(--o-decoration-thickness);
   }
 
   &--del,
   &--strike {
     text-decoration: line-through;
-    text-decoration-color: var(--o-decoration-color, currentColor);
-    text-decoration-thickness: var(--o-decoration-thickness, 1px);
-    opacity: 0.6;
+    text-decoration-color: var(--o-decoration-color);
+    text-decoration-thickness: var(--o-decoration-thickness);
+    opacity: var(--opacity-disabled);
   }
 
   &--ins {
     text-decoration: underline;
-    text-decoration-color: var(--o-decoration-color, map.get($o-text-themes, success));
-    text-decoration-thickness: var(--o-decoration-thickness, 2px);
-    text-underline-offset: var(--o-decoration-offset, 3px);
+    text-decoration-color: var(--o-decoration-color);
+    text-decoration-thickness: var(--o-decoration-thickness);
+    text-underline-offset: var(--o-decoration-offset);
   }
 
   // ── 高亮标记（4 种模式：block / line / marker / underline） ──
@@ -235,9 +474,9 @@
   // - 通过 CSS 变量（--o-mark-color）由 JS 注入颜色，inline style 不再覆盖类
   // - 默认使用 line 模式（更通用、对比度更强）
   &--mark-block {
-    background-color: var(--o-mark-color, rgba(255, 220, 60, 0.5));
-    border-radius: var(--o-mark-radius, 2px);
-    padding: var(--o-mark-padding, 0 2px);
+    background-color: var(--o-mark-color);
+    border-radius: var(--o-mark-radius);
+    padding: var(--o-mark-padding);
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
@@ -246,8 +485,8 @@
     // 高亮笔效果：背景 60% 高度色条，从 50% 位置开始
     // 使用 background-size + background-position 更可靠（linear-gradient 直接设的 55% 位置偶尔会失数）
     background-image: linear-gradient(
-      var(--o-mark-color, rgba(255, 220, 60, 0.6)),
-      var(--o-mark-color, rgba(255, 220, 60, 0.6))
+      var(--o-mark-color),
+      var(--o-mark-color)
     );
     background-size: 100% 40%;
     background-position: 0 60%;
@@ -259,10 +498,10 @@
 
   &--mark-marker {
     // 马克笔效果：块状背景 + 直角边框（像荧光笔涂在角落）
-    background-color: var(--o-mark-color, rgba(255, 220, 60, 0.7));
+    background-color: var(--o-mark-color);
     border-radius: 3px 3px 3px 0;
     padding: 1px 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
@@ -270,19 +509,14 @@
   &--mark-underline {
     // 文字下方的"色条"（不是 text-decoration 那种细线，而是有厚度的色块）
     text-decoration: underline;
-    text-decoration-color: var(--o-mark-color, rgba(255, 220, 60, 0.7));
+    text-decoration-color: var(--o-mark-color);
     text-decoration-thickness: 8px;
     text-underline-offset: 4px;
     text-decoration-skip-ink: none;
   }
 
-  // 深色模式适配：使用更亮的颜色 + 增强对比
-  [data-theme='dark'] &--mark-block,
-  [data-theme='dark'] &--mark-line,
-  [data-theme='dark'] &--mark-marker {
-    // 深色模式默认使用更高亮度的高亮色
-    --o-mark-color: rgba(255, 230, 120, 0.45);
-  }
+  // 视觉×主题 二维矩阵由 theme 主题组件包统一派生变量实现
+  // mark 在不同主题下的亮度调整由主题 OR 契约在各主题下重新派生对应 scale
 }
 
 // ==================== 显示效果：渐变文字 ====================
@@ -318,18 +552,17 @@
 //   居中绘制导致文字变粗的问题
 // - 通过多层 text-shadow（最多 8 个方向，0px blur）增强描边锐利度，
 //   比 -webkit-text-stroke 在不同浏览器下渲染更一致
-// - 通过 CSS 变量（--o-stroke-color / --o-stroke-width）由 JS 注入，
-//   避免 inline style 覆盖类的灵活性
-// - 深色模式自动增强对比度
+// - 描边颜色由 theme 主题组件包按当前激活视觉×主题注入到 --o-stroke-color
+//   组件层不预设 light/dark 模式选择器，由主题统一注入
 
 .o-text--stroke {
   // 锐利描边增强（8 方向 text-shadow，blur=0px）
-  text-shadow: var(--o-stroke-shadows, none);
+  text-shadow: var(--o-stroke-shadows);
 
   // 默认外描边：paint-order: stroke fill 让描边绘制在文字外侧
   paint-order: stroke fill;
-  -webkit-text-stroke: var(--o-stroke-width, 1px) var(--o-stroke-color, currentColor);
-  text-stroke: var(--o-stroke-width, 1px) var(--o-stroke-color, currentColor);
+  -webkit-text-stroke: var(--o-stroke-width) var(--o-stroke-color);
+  text-stroke: var(--o-stroke-width) var(--o-stroke-color);
 
   // 内描边：paint-order 颠倒，描边在文字内部
   &-inline {
@@ -338,13 +571,8 @@
 
   // 双层描边：外层（粗） + 内层（细）通过 text-shadow 模拟内层细描边
   &-double {
-    -webkit-text-stroke: var(--o-stroke-width-outer, 2px) var(--o-stroke-color-outer, currentColor);
-    text-stroke: var(--o-stroke-width-outer, 2px) var(--o-stroke-color-outer, currentColor);
-  }
-
-  // 深色模式：增强描边颜色对比（变量覆盖）
-  [data-theme='dark'] & {
-    --o-stroke-color: var(--o-stroke-color-dark, var(--o-stroke-color, currentColor));
+    -webkit-text-stroke: var(--o-stroke-width-outer) var(--o-stroke-color-outer);
+    text-stroke: var(--o-stroke-width-outer) var(--o-stroke-color-outer);
   }
 }
 
@@ -364,29 +592,29 @@
   //   - 如果 color: transparent，currentColor 也变 transparent，导致描边不可见
   //   - 保留 color 为 tony 色，仅用 text-fill-color 覆盖填充
   &-outline {
-    -webkit-text-stroke: var(--o-hollow-stroke-width, 1.5px) var(--o-hollow-stroke-color, currentColor);
-    text-stroke: var(--o-hollow-stroke-width, 1.5px) var(--o-hollow-stroke-color, currentColor);
+    -webkit-text-stroke: var(--o-hollow-stroke-width) var(--o-hollow-stroke-color);
+    text-stroke: var(--o-hollow-stroke-width) var(--o-hollow-stroke-color);
     // 仅设 fill-color 为透明，保留 color 属性以便 currentColor 仍为有色调
     -webkit-text-fill-color: transparent;
     transition:
-      -webkit-text-fill-color 0.3s ease,
-      color 0.3s ease;
+      -webkit-text-fill-color var(--duration-normal) var(--easing-ease),
+      color var(--duration-normal) var(--easing-ease);
   }
 
   // 模式2：模糊文字（向后兼容，2026-06 之前的行为）
   // 修复：使用 -webkit-text-fill-color: transparent，避免改变 color 属性
   &-blur {
     -webkit-text-fill-color: transparent;
-    filter: blur(var(--o-hollow-blur, 4px));
+    filter: blur(var(--o-hollow-blur));
   }
 
   // 模式3：玻璃态镂空
   // 修复：保留 color，仅设 text-fill-color，避免 currentColor 计算为 transparent
   &-glass {
-    -webkit-text-stroke: 1px var(--o-hollow-stroke-color, currentColor);
-    text-stroke: 1px var(--o-hollow-stroke-color, currentColor);
+    -webkit-text-stroke: 1px var(--o-hollow-stroke-color);
+    text-stroke: 1px var(--o-hollow-stroke-color);
     -webkit-text-fill-color: transparent;
-    text-shadow: 0 0 6px var(--o-hollow-backdrop, rgba(255, 255, 255, 0.5));
+    text-shadow: 0 0 6px var(--o-hollow-backdrop);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
   }
@@ -397,11 +625,11 @@
   }
   // hover 填充：覆盖 fill-color 恢复可见填充，但 color 一直保留为 tony 色
   &-fillable.o-text--hollow-outline:hover {
-    -webkit-text-fill-color: var(--o-hollow-fill-color, currentColor);
+    -webkit-text-fill-color: var(--o-hollow-fill-color);
   }
   &-fillable.o-text--hollow-blur:hover,
   &-fillable.o-text--hollow-glass:hover {
-    -webkit-text-fill-color: var(--o-hollow-fill-color, currentColor);
+    -webkit-text-fill-color: var(--o-hollow-fill-color);
     filter: none;
   }
 }
@@ -415,7 +643,7 @@
 // ==================== 显示效果：外发光 + 内阴影 ====================
 
 .o-text--lifted {
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(var(--shadow-md));
 }
 
 // ==================== 交互效果：Hover ====================
@@ -423,7 +651,7 @@
 // 颜色变化
 .o-text--hover-color {
   cursor: pointer;
-  transition: color 0.25s ease;
+  transition: color var(--duration-normal) var(--easing-ease);
 
   &:hover {
     filter: brightness(1.1);
@@ -433,7 +661,7 @@
 // 缩放
 .o-text--hover-scale {
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--duration-normal) cubic-bezier(0.34, 1.56, 0.64, 1);
 
   &:hover {
     transform: scale(1.05);
@@ -457,7 +685,7 @@
     width: 0;
     height: 2px;
     background: currentColor;
-    transition: width 0.3s ease;
+    transition: width var(--duration-normal) var(--easing-ease);
   }
 
   &:hover::after {
@@ -468,20 +696,20 @@
 // 透明度
 .o-text--hover-opacity {
   cursor: pointer;
-  transition: opacity 0.25s ease;
+  transition: opacity var(--duration-normal) var(--easing-ease);
 
   &:hover {
-    opacity: 0.6;
+    opacity: var(--opacity-hover);
   }
 }
 
 // 高亮背景
 .o-text--hover-highlight {
   cursor: pointer;
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color var(--duration-normal) var(--easing-ease), color var(--duration-normal) var(--easing-ease);
 
   &:hover {
-    background: rgba(24, 144, 255, 0.1);
+    background: var(--or-text-primary-info-100);  // info.100  浅色 hover 响应
     border-radius: 3px;
   }
 }
@@ -491,7 +719,7 @@
   cursor: pointer;
 
   &:hover {
-    animation: o-text-wobble 0.4s ease-in-out;
+    animation: o-text-wobble var(--duration-slow) var(--easing-easeInOut);
   }
 }
 
@@ -506,21 +734,21 @@
 // 上浮
 .o-text--hover-lift {
   cursor: pointer;
-  transition: transform 0.25s ease, filter 0.25s ease;
+  transition: transform var(--duration-normal) var(--easing-ease), filter var(--duration-normal) var(--easing-ease);
 
   &:hover {
     transform: translateY(-2px);
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+    filter: drop-shadow(var(--shadow-md));
   }
 }
 
 // 闪烁
 .o-text--hover-flash {
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--duration-fast) var(--easing-ease);
 
   &:hover {
-    animation: o-text-flash 0.6s ease-in-out 3;
+    animation: o-text-flash var(--duration-slow) var(--easing-easeInOut) 3;
   }
 }
 
@@ -535,7 +763,7 @@
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
-  animation: o-text-ripple 0.4s ease-out forwards;
+  animation: o-text-ripple var(--duration-slow) var(--easing-easeOut) forwards;
 }
 
 // ==================== 动画效果：进入动画 ====================
@@ -842,103 +1070,103 @@
 // ── 进入动画应用（一次性） ──
 
 .o-text--anim-fade {
-  animation: o-text-fade-in 0.5s ease-out both;
+  animation: o-text-fade-in var(--duration-slow) var(--easing-easeOut) both;
 }
 
 .o-text--anim-slide-up {
-  animation: o-text-slide-up 0.6s ease-out both;
+  animation: o-text-slide-up var(--duration-slow) var(--easing-easeOut) both;
 }
 
 .o-text--anim-slide-down {
-  animation: o-text-slide-down 0.6s ease-out both;
+  animation: o-text-slide-down var(--duration-slow) var(--easing-easeOut) both;
 }
 
 .o-text--anim-slide-left {
-  animation: o-text-slide-left 0.6s ease-out both;
+  animation: o-text-slide-left var(--duration-slow) var(--easing-easeOut) both;
 }
 
 .o-text--anim-slide-right {
-  animation: o-text-slide-right 0.6s ease-out both;
+  animation: o-text-slide-right var(--duration-slow) var(--easing-easeOut) both;
 }
 
 .o-text--anim-zoom {
-  animation: o-text-zoom-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: o-text-zoom-in var(--duration-slow) cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .o-text--anim-blink {
-  animation: o-text-blink-in 0.8s ease-in-out both;
+  animation: o-text-blink-in var(--duration-slow) var(--easing-easeInOut) both;
 }
 
 .o-text--anim-bounce {
-  animation: o-text-bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: o-text-bounce-in var(--duration-slow) cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .o-text--anim-blur-in {
-  animation: o-text-blur-in 0.8s ease-out both;
+  animation: o-text-blur-in var(--duration-slow) var(--easing-easeOut) both;
 }
 
 .o-text--anim-elastic {
-  animation: o-text-enter-elastic 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: o-text-enter-elastic var(--duration-slow) cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .o-text--anim-flip {
-  animation: o-text-enter-flip 0.7s ease-out both;
+  animation: o-text-enter-flip var(--duration-slow) var(--easing-easeOut) both;
   transform-origin: center top;
 }
 
 .o-text--anim-slide-spin {
-  animation: o-text-enter-slide-spin 0.6s ease-out both;
+  animation: o-text-enter-slide-spin var(--duration-slow) var(--easing-easeOut) both;
 }
 
 .o-text--anim-tremble {
-  animation: o-text-enter-tremble 0.6s ease-out both;
+  animation: o-text-enter-tremble var(--duration-slow) var(--easing-easeOut) both;
 }
 
 .o-text--anim-char-reveal {
-  animation: o-text-enter-char-reveal 0.4s ease-out both;
+  animation: o-text-enter-char-reveal var(--duration-slow) var(--easing-easeOut) both;
 }
 
 // ── 进入动画应用（持续展示 - 循环） ──
 
 // 持续呼吸
 .o-text--anim-breathe {
-  animation: o-text-enter-breathe 2.5s ease-in-out infinite both;
+  animation: o-text-enter-breathe var(--duration-slow) var(--easing-easeInOut) infinite both;
 }
 
 // 持续飘浮
 .o-text--anim-float {
-  animation: o-text-enter-float 2s ease-in-out infinite both;
+  animation: o-text-enter-float var(--duration-slow) var(--easing-easeInOut) infinite both;
 }
 
 // 持续发光脉动
 .o-text--anim-glow {
-  animation: o-text-enter-glow 1.8s ease-in-out infinite both;
+  animation: o-text-enter-glow var(--duration-slow) var(--easing-easeInOut) infinite both;
 }
 
 // 持续摇晃
 .o-text--anim-sway {
-  animation: o-text-enter-sway 1.5s ease-in-out infinite both;
+  animation: o-text-enter-sway var(--duration-slow) var(--easing-easeInOut) infinite both;
   transform-origin: center center;
 }
 
 // 持续缩放脉冲
 .o-text--anim-scale-pulse {
-  animation: o-text-enter-scale-pulse 1.8s ease-in-out infinite both;
+  animation: o-text-enter-scale-pulse var(--duration-slow) var(--easing-easeInOut) infinite both;
 }
 
 // 持续描边流光
 .o-text--anim-border-flow {
-  animation: o-text-enter-border-flow 2s ease-in-out infinite both;
+  animation: o-text-enter-border-flow var(--duration-slow) var(--easing-easeInOut) infinite both;
 }
 
 // 持续渐显
 .o-text--anim-reveal {
-  animation: o-text-enter-reveal 1s ease-out both;
+  animation: o-text-enter-reveal var(--duration-slow) var(--easing-easeOut) both;
 }
 
 // 持续星光闪烁
 .o-text--anim-sparkle {
-  animation: o-text-enter-sparkle 2.5s ease-in-out infinite both;
+  animation: o-text-enter-sparkle var(--duration-slow) var(--easing-easeInOut) infinite both;
 }
 
 // 持续打字机光标闪烁（独立使用）
@@ -946,7 +1174,7 @@
   overflow: hidden;
   white-space: nowrap;
   border-right: 2px solid currentColor;
-  animation: o-text-typing-cursor 0.7s step-end infinite;
+  animation: o-text-typing-cursor var(--duration-slow) step-end infinite;
 }
 
 // ==================== 循环动画 ====================
@@ -1066,32 +1294,32 @@
 
 // 应用循环动画类
 .o-text--loop-pulse {
-  animation: o-text-pulse 1.5s ease-in-out infinite;
+  animation: o-text-pulse var(--duration-slow) var(--easing-easeInOut) infinite;
 }
 
 .o-text--loop-blink {
-  animation: o-text-loop-blink 1.2s ease-in-out infinite;
+  animation: o-text-loop-blink var(--duration-slow) var(--easing-easeInOut) infinite;
 }
 
 .o-text--loop-bounce {
-  animation: o-text-loop-bounce 1s ease-in-out infinite;
+  animation: o-text-loop-bounce var(--duration-slow) var(--easing-easeInOut) infinite;
 }
 
 .o-text--loop-shake {
-  animation: o-text-loop-shake 0.8s ease-in-out infinite;
+  animation: o-text-loop-shake var(--duration-slow) var(--easing-easeInOut) infinite;
 }
 
 .o-text--loop-rotate {
-  animation: o-text-loop-rotate 3s linear infinite;
+  animation: o-text-loop-rotate var(--duration-slow) var(--easing-linear) infinite;
   display: inline-block;
 }
 
 .o-text--loop-wander {
-  animation: o-text-loop-wander 3s ease-in-out infinite;
+  animation: o-text-loop-wander var(--duration-slow) var(--easing-easeInOut) infinite;
 }
 
 .o-text--loop-wave {
-  animation: o-text-loop-wave 1.2s ease-in-out infinite;
+  animation: o-text-loop-wave var(--duration-slow) var(--easing-easeInOut) infinite;
 }
 
 .o-text--loop-char-wave,
@@ -1102,7 +1330,7 @@
 .o-text--loop-char-wave .o-text__char,
 .o-text--anim-char-wave .o-text__char {
   display: inline-block;
-  animation: o-text-char-wave 1.5s ease-in-out infinite;
+  animation: o-text-char-wave var(--duration-slow) var(--easing-easeInOut) infinite;
 }
 
 .o-text--loop-char-wave .o-text__char:nth-child(2n) {
@@ -1134,19 +1362,19 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.4) 50%,
+    var(--oc-text-primary-50) 50%,
     transparent 100%
   );
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
-  animation: o-text-shimmer 2s linear infinite;
+  animation: o-text-shimmer var(--duration-slow) var(--easing-linear) infinite;
 }
 
 // 渐变流动
 .o-text--loop-gradient-flow {
   background-size: 200% auto;
-  animation: o-text-gradient-flow 3s linear infinite;
+  animation: o-text-gradient-flow var(--duration-slow) var(--easing-linear) infinite;
 }
 
 // 倒计时
@@ -1162,8 +1390,8 @@
     height: 100%;
     width: 100%;
     background: currentColor;
-    opacity: 0.3;
-    animation: o-text-countdown 10s linear forwards;
+    opacity: var(--opacity-overlay);
+    animation: o-text-countdown var(--duration-slow) var(--easing-linear) forwards;
     transform-origin: left;
   }
 }
@@ -1173,7 +1401,7 @@
 .o-text__cursor {
   display: inline-block;
   margin-left: 2px;
-  animation: o-text-typing-cursor 0.7s step-end infinite;
+  animation: o-text-typing-cursor var(--duration-slow) step-end infinite;
 }
 
 // ==================== 前缀 / 后缀图标 ====================
@@ -1201,7 +1429,7 @@
   margin-left: 4px;
   opacity: 0.7;
   vertical-align: middle;
-  animation: o-text-fade-in 0.2s ease-out;
+  animation: o-text-fade-in var(--duration-fast) var(--easing-easeOut);
   pointer-events: none;
 }
 
@@ -1213,14 +1441,14 @@
   gap: 4px;
   margin-left: 8px;
   padding: 2px 8px;
-  font-size: 12px;
-  background: rgba(0, 0, 0, 0.75);
-  color: #fff;
-  border-radius: 4px;
-  animation: o-text-fade-in 0.2s ease-out;
+  font-size: var(--text-xs);
+  background: var(--oc-overlay-overlay-900);
+  color: var(--oc-text-primary-50);
+  border-radius: var(--radius-sm);
+  animation: o-text-fade-in var(--duration-fast) var(--easing-easeOut);
 
   .o-text__copy-tip-icon {
-    color: #fff;
+    color: var(--oc-text-primary-50);
     flex-shrink: 0;
   }
 }
@@ -1237,5 +1465,5 @@
   }
 }
 
-// 深色模式适配由主题系统统一提供（:root[data-theme=dark]），
-// 本文件不再维护 dark map，避免双重来源。
+// 视觉×主题 二维矩阵由 theme 主题组件包统一派生，
+// 本文件不再维护按主题分组的 map，避免双重来源。

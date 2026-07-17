@@ -1,11 +1,11 @@
-/** 存储错误分类(4 类) */
+// 存储错误分类
 export type StorageErrorKind =
-  | 'quota'         // 容量超限(localStorage 5MB / IndexedDB 配额)
-  | 'not-found'     // 数据库未找到(IndexedDB)
-  | 'version'       // 版本不兼容(IndexedDB upgrade 失败)
+  | 'quota'         // 容量超限
+  | 'not-found'     // 数据库未找到
+  | 'version'       // 版本不兼容
   | 'unknown'       // 未知错误
 
-/** 存储错误基类 */
+// 存储错误基类
 export class StorageError extends Error {
   readonly kind: StorageErrorKind
   readonly cause?: unknown

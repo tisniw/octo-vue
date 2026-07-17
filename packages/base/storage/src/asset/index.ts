@@ -1,2 +1,7 @@
-export { AssetStore, assetStore } from './AssetStore'
-export type { AssetStoreOptions, AssetInfo } from './AssetStore'
+export {
+  AssetStore,
+  assetStore,
+  type AssetStoreOptions,
+  type AssetInfo,
+  type DirectoryBindingInfo,
+} from './AssetStore'

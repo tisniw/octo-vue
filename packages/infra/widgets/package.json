@@ -40,8 +40,8 @@
     "vue": "^3.5.39"
   },
   "dependencies": {
-    "@octovue/theme": "*",
-    "@octovue/icon": "*"
+    "@octovue/icon": "*",
+    "@octovue/theme": "*"
   },
   "devDependencies": {
     "typescript": "^6.0.3"

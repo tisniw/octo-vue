@@ -1,26 +1,43 @@
-/**
- * @octovue/storage 主入口。
- * 聚合所有子模块,提供统一导入路径。
- */
+// @octovue/storage 主入口,聚合所有子模块提供统一导入路径
 
-// 共享类型(从 0.0.0)
-export * from './shared/types'
-export * from './shared/error'
-export * from './shared/serializer'
+// 共享层
+export * from './shared'
 
 // db 模块
 export {
   localStorageAdapter,
+  createLocalStorageAdapter,
   sessionStorageAdapter,
+  createSessionStorageAdapter,
   createMemoryAdapter,
   getStorage,
+  createWebStorageAdapter,
   IndexedDBAdapter,
+  OPFSAdapter,
+  FSAAdapter,
+  saveDirectoryHandle,
+  loadDirectoryHandle,
+  clearDirectoryHandle,
+  isFSAHandlePersistenceAvailable,
+  createBlobAdapter,
+  resolveBlobBackendType,
+  detectBestBlobBackend,
+  isOPFSAvailable,
+  isFSAAvailable,
 } from './db/index'
 export type {
   StorageAdapter,
   WebStorageType,
   IndexedDBAdapterOptions,
   UpgradeCallback,
+  WebStorageAdapterOptions,
+  LocalStorageAdapterOptions,
+  SessionStorageAdapterOptions,
+  OPFSAdapterOptions,
+  FSAAdapterOptions,
+  PersistedDirectoryHandle,
+  BlobBackendType,
+  CreateBlobAdapterOptions,
 } from './db/index'
 
 // cache 模块
@@ -38,8 +55,10 @@ export type {
 } from './store/types'
 
 // asset 模块
-export { AssetStore, assetStore } from './asset/index'
-export type {
-  AssetStoreOptions,
-  AssetInfo,
+export {
+  AssetStore,
+  assetStore,
+  type AssetStoreOptions,
+  type AssetInfo,
+  type DirectoryBindingInfo,
 } from './asset/index'

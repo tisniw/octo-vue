@@ -1,9 +1,6 @@
 import { LRUCache } from './LRU'
 
-/**
- * 异步函数按 TTL 记忆化。
- * 并发请求共享同一 Promise,避免竞态。
- */
+// 异步函数按 TTL 记忆化,并发请求共享同一 Promise 避免竞态
 export function memoizeAsync<Args extends any[], R>(
   fn: (...args: Args) => Promise<R>,
   ttl: number,
@@ -22,7 +19,7 @@ export function memoizeAsync<Args extends any[], R>(
       return Promise.resolve(cached.value)
     }
 
-    // 2. 正在 in-flight 的请求(避免重复发起)
+    // 2. 正在 in-flight 的请求,避免重复发起
     const pending = inflight.get(key)
     if (pending) {
       return pending

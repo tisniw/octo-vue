@@ -1,9 +1,6 @@
 import type { StorageAdapter } from './types'
 
-/**
- * 纯内存适配器,基于 Map。
- * 适用于 SSR / 单元测试 / 短期缓存。
- */
+// 纯内存适配器,基于 Map,适用于 SSR、单元测试和短期缓存
 export function createMemoryAdapter(): StorageAdapter {
   const store = new Map<string, unknown>()
 

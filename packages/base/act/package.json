@@ -80,17 +80,17 @@
     "package.json"
   ],
   "dependencies": {
-    "gsap": "^3.12.0",
+    "@octovue/storage": "*",
+    "@octovue/theme": "*",
+    "@octovue/utils": "*",
     "d3-color": "^3.1.0",
     "d3-interpolate": "^3.0.0",
-    "@octovue/utils": "*",
-    "@octovue/theme": "*",
-    "@octovue/storage": "*"
+    "gsap": "^3.12.0"
   },
   "devDependencies": {
+    "@vue/runtime-core": "^3.4.0",
     "typescript": "^6.0.3",
-    "vue": "^3.4.0",
-    "@vue/runtime-core": "^3.4.0"
+    "vue": "^3.4.0"
   },
   "engines": {
     "node": ">=18"

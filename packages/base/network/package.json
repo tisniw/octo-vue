@@ -2,7 +2,13 @@
   "name": "@octovue/network",
   "version": "0.1.0",
   "description": "网络通信设施 — HTTP/SSE/WebSocket 客户端",
-  "keywords": ["http", "sse", "websocket", "axios", "network"],
+  "keywords": [
+    "http",
+    "sse",
+    "websocket",
+    "axios",
+    "network"
+  ],
   "license": "MIT",
   "author": "TISNIW",
   "repository": {
@@ -27,7 +33,9 @@
     "./protocols/*": "./src/protocols/*/index.ts",
     "./package.json": "./package.json"
   },
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
