@@ -1,0 +1,737 @@
+/**
+ * o-text 视觉特殊处理 · 用户自定义钩子层
+ *
+ * 职责：
+ *   提供"标准化扩展点"，让用户能在不修改源码的前提下：
+ *     1. 通过 CSS 变量完全自定义视觉效果（颗粒度最细）
+ *     2. 通过预定义自定义类快速应用预设（颗粒度较粗但最便捷）
+ *     3. 通过 [data-*] 属性控制行为（颗粒度中等）
+ *
+ * 三大扩展体系：
+ *   A. CSS 变量钩子（--o-text-user-*）—— 纯样式覆盖，颗粒度细
+ *   B. 自定义类（.o-text--custom-*） —— 预设组合，颗粒度粗
+ *   C. data 属性（[data-o-text-*]）   —— 行为/状态控制，颗粒度中
+ *
+ * 层级定义（在整个 visuals 目录中的位置）：
+ *   通用（_common.scss）       ─ 所有主题共享，与主题无关的视觉差异化
+ *   自动（_auto.scss）          ─ 主题色自动驱动，同一套类在所有主题里自动适配
+ *   特殊（_themes.scss）        ─ 针对具体主题（浅色 / 深色 / 古风等）的额外增强
+ *   本层（_user-extensions.scss）─ 用户覆盖钩子，优先级最低，最易覆盖
+ *
+ * 与 cpns/index.scss + 其他 visuals 文件的边界：
+ *   - index.scss：组件核心样式（不可改）
+ *   - _common.scss：通用视觉（不可改）
+ *   - _auto.scss：主题色驱动视觉（不可改）
+ *   - _themes.scss：主题特殊视觉（不可改）
+ *   - _user-extensions.scss（本文件）：用户可改的扩展点（必须保证覆盖可预测）
+ *
+ * 设计原则：
+ *   1. 所有钩子都使用 --o-text-user-* 前缀，避免与组件内部变量冲突
+ *   2. 所有变量都有 fallback 默认值，覆盖即生效
+ *   3. 自定义类命名遵循 BEM 规范：.o-text--custom-{name}
+ *   4. 自定义类使用 :where() 包裹，优先级最低，用户可轻易覆盖
+ *   5. data 属性使用稳定语义（[data-o-text-stretch]），不破坏类型契约
+ */
+
+// =============================================================================
+// A. CSS 变量钩子体系
+// =============================================================================
+//
+// 用户使用方式：
+//   :root {
+//     --o-text-user-line-height: 2;          // 全局覆盖行高
+//     --o-text-user-h1-color: #ff0000;        // 全局覆盖 h1 颜色
+//   }
+//
+// 或在具体元素上：
+//   .my-text {
+//     --o-text-user-letter-spacing: 0.1em;
+//   }
+//
+// 所有变量都有 fallback，用户只需覆盖关心的部分即可
+
+.o-text {
+  // ── 基础排版变量 ──
+  --o-text-user-line-height: inherit;
+  --o-text-user-letter-spacing: inherit;
+  --o-text-user-font-family: inherit;
+  --o-text-user-font-weight: inherit;
+  --o-text-user-font-style: inherit;
+  --o-text-user-text-align: inherit;
+  --o-text-user-text-transform: inherit;
+  --o-text-user-text-indent: inherit;
+  --o-text-user-white-space: inherit;
+  --o-text-user-word-break: inherit;
+  --o-text-user-user-select: inherit;
+  --o-text-user-cursor: inherit;
+  --o-text-user-opacity: inherit;
+  --o-text-user-filter: inherit;
+  --o-text-user-transition: inherit;
+
+  // ── 颜色变量（用于完全自定义 tony 之外的颜色场景）──
+  --o-text-user-color: inherit;
+  --o-text-user-bg: inherit;
+  --o-text-user-border-color: inherit;
+
+  // ── 标题专用变量（按 h1-h6 拆开）──
+  --o-text-user-h1-color: inherit;
+  --o-text-user-h2-color: inherit;
+  --o-text-user-h3-color: inherit;
+  --o-text-user-h4-color: inherit;
+  --o-text-user-h5-color: inherit;
+  --o-text-user-h6-color: inherit;
+
+  // ── 装饰变量 ──
+  --o-text-user-decoration-line: inherit;
+  --o-text-user-decoration-style: inherit;
+  --o-text-user-decoration-color: inherit;
+  --o-text-user-decoration-thickness: inherit;
+  --o-text-user-decoration-offset: inherit;
+
+  // ── mark 变量 ──
+  --o-text-user-mark-bg: inherit;
+  --o-text-user-mark-color: inherit;
+  --o-text-user-mark-radius: inherit;
+  --o-text-user-mark-padding: inherit;
+
+  // ── pre/code 变量 ──
+  --o-text-user-pre-bg: inherit;
+  --o-text-user-pre-padding: inherit;
+  --o-text-user-pre-radius: inherit;
+  --o-text-user-pre-border: inherit;
+  --o-text-user-code-bg: inherit;
+  --o-text-user-code-color: inherit;
+  --o-text-user-code-radius: inherit;
+
+  // ── blockquote 变量 ──
+  --o-text-user-blockquote-border-color: inherit;
+  --o-text-user-blockquote-border-width: inherit;
+  --o-text-user-blockquote-padding: inherit;
+  --o-text-user-blockquote-bg: inherit;
+
+  // ── 强调变量 ──
+  --o-text-user-strong-color: inherit;
+  --o-text-user-em-color: inherit;
+  --o-text-user-a-color: inherit;
+  --o-text-user-a-decoration: inherit;
+  --o-text-user-a-decoration-color: inherit;
+
+  // ── 选区变量 ──
+  --o-text-user-selection-bg: inherit;
+  --o-text-user-selection-color: inherit;
+
+  // ── 焦点环变量 ──
+  --o-text-user-focus-outline-color: inherit;
+  --o-text-user-focus-outline-width: inherit;
+  --o-text-user-focus-outline-offset: inherit;
+
+  // ── 间距变量（margin/padding 用户覆盖）──
+  --o-text-user-margin: inherit;
+  --o-text-user-padding: inherit;
+  --o-text-user-margin-top: inherit;
+  --o-text-user-margin-bottom: inherit;
+  --o-text-user-padding-left: inherit;
+  --o-text-user-padding-right: inherit;
+
+  // ── 列表变量 ──
+  --o-text-user-list-style: inherit;
+  --o-text-user-list-padding-left: inherit;
+  --o-text-user-list-item-margin: inherit;
+
+  // ── 首字下沉变量 ──
+  --o-text-user-dropcap-size: inherit;
+  --o-text-user-dropcap-color: inherit;
+  --o-text-user-dropcap-weight: inherit;
+  --o-text-user-dropcap-float: inherit;
+
+  // ── 应用：标题颜色应用用户覆盖 ──
+  // --o-text-user-hN-color 在 .o-text 上已定义为 inherit，
+  // 此处直接消费 var() 即可，不需要 var(--xxx, inherit) 双层兜底
+  &--tag-h1 {
+    color: var(--o-text-user-h1-color);
+  }
+
+  &--tag-h2 {
+    color: var(--o-text-user-h2-color);
+  }
+
+  &--tag-h3 {
+    color: var(--o-text-user-h3-color);
+  }
+
+  &--tag-h4 {
+    color: var(--o-text-user-h4-color);
+  }
+
+  &--tag-h5 {
+    color: var(--o-text-user-h5-color);
+  }
+
+  &--tag-h6 {
+    color: var(--o-text-user-h6-color);
+  }
+}
+
+// =============================================================================
+// B. 自定义类体系（.o-text--custom-*）
+// =============================================================================
+//
+// 用户使用方式：
+//   <o-text class="o-text--custom-overline">...</o-text>
+//
+// 所有自定义类都使用 :where() 包裹，优先级最低（0,0,0）
+// 用户可在自己的样式表中轻松覆盖
+// 类命名空间：.o-text--custom-{name}
+
+// ── 文字装饰类（5 种）──────────────────────────────────────
+.o-text {
+  // 顶部装饰线
+  &:where(.o-text--custom-overline) {
+    text-decoration: overline;
+    text-decoration-color: var(--o-text-user-decoration-color);
+    text-decoration-thickness: var(--o-text-user-decoration-thickness);
+  }
+
+  // 双重装饰线（顶 + 底）
+  &:where(.o-text--custom-double-line) {
+    text-decoration: underline overline;
+    text-decoration-color: var(--o-text-user-decoration-color);
+    text-decoration-thickness: var(--o-text-user-decoration-thickness);
+    text-underline-offset: 0.3em;
+    text-overline-offset: 0.3em;
+  }
+
+  // 波浪下划线
+  &:where(.o-text--custom-wavy-underline) {
+    text-decoration: underline wavy;
+    text-decoration-color: var(--o-text-user-decoration-color);
+    text-decoration-thickness: var(--o-text-user-decoration-thickness);
+    text-underline-offset: 0.3em;
+  }
+
+  // 删除线 + 弱化
+  &:where(.o-text--custom-strike-soft) {
+    text-decoration: line-through;
+    text-decoration-color: var(--o-text-user-decoration-color);
+    text-decoration-thickness: var(--o-text-user-decoration-thickness);
+    opacity: 0.6;
+  }
+
+  // 全大写 + 字距 + 加粗
+  &:where(.o-text--custom-eyebrow) {
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+    font-size: 0.85em;
+  }
+}
+
+// ── 排版类（4 种）────────────────────────────────────────────
+.o-text {
+  // 紧凑排版
+  &:where(.o-text--custom-compact) {
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  // 宽松排版
+  &:where(.o-text--custom-relaxed) {
+    line-height: 1.8;
+    letter-spacing: 0.02em;
+  }
+
+  // 杂志风格（首字大 + 行高大）
+  &:where(.o-text--custom-magazine) {
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+  }
+
+  // 终端风格（等宽 + 紧凑）
+  &:where(.o-text--custom-terminal) {
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.92em;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+}
+
+// ── 强调类（5 种）────────────────────────────────────────────
+.o-text {
+  // 重点（粗 + 主题色加重）
+  &:where(.o-text--custom-emphasis-bold) {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  // 引用风（斜体 + 主题色）
+  &:where(.o-text--custom-quote-style) {
+    font-style: italic;
+    opacity: 0.9;
+  }
+
+  // 标签风（小 + 大写 + 字距）
+  &:where(.o-text--custom-tag-style) {
+    display: inline-block;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.1em 0.5em;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    line-height: 1.4;
+  }
+
+  // 数字风格（等宽 + tabular-nums）
+  &:where(.o-text--custom-numeric) {
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  // 法律风格（小型大写字母 + 字距）
+  &:where(.o-text--custom-legal) {
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+  }
+}
+
+// ── 排版网格类（4 种）────────────────────────────────────────
+.o-text {
+  // 剧中（垂直水平居中布局文本）
+  &:where(.o-text--custom-text-center-both) {
+    text-align: center;
+  }
+
+  // 两端对齐（杂志风格）
+  &:where(.o-text--custom-justify) {
+    text-align: justify;
+    text-justify: inter-character;
+    hyphens: auto;
+  }
+
+  // 强制换行（用于长 URL）
+  &:where(.o-text--custom-break-all) {
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+
+  // 保留空白（用于代码段）
+  &:where(.o-text--custom-pre-wrap) {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+// ── 链接相关（4 种）──────────────────────────────────────────
+.o-text {
+  // 无下划线链接
+  &:where(.o-text--custom-link-clean) :where(a) {
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  // 按钮式链接
+  &:where(.o-text--custom-link-button) :where(a) {
+    display: inline-block;
+    padding: 0.3em 0.8em;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      background: currentColor;
+      color: var(--oc-text-primary-50);
+    }
+  }
+
+  // 卡片链接（块级可点击）
+  &:where(.o-text--custom-link-card) :where(a) {
+    display: block;
+    padding: 0.5em;
+    border: 1px solid var(--oc-border-primary-200);
+    border-radius: 4px;
+    text-decoration: none;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      border-color: currentColor;
+      transform: translateY(-1px);
+    }
+  }
+
+  // 虚线链接
+  &:where(.o-text--custom-link-dashed) :where(a) {
+    text-decoration: underline dashed;
+    text-underline-offset: 0.3em;
+  }
+}
+
+// ── 容器/布局类（4 种）────────────────────────────────────────
+.o-text {
+  // 块级容器
+  &:where(.o-text--custom-block) {
+    display: block !important;
+  }
+
+  // 弹性容器
+  &:where(.o-text--custom-flex) {
+    display: inline-flex !important;
+    align-items: baseline;
+  }
+
+  // 网格占位
+  &:where(.o-text--custom-grid-item) {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  // 截断容器（单行）
+  &:where(.o-text--custom-truncate) {
+    display: block !important;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// ── 状态类（4 种）────────────────────────────────────────────
+.o-text {
+  // 草稿态（虚线边框 + 弱化）
+  &:where(.o-text--custom-draft) {
+    border: 1px dashed var(--oc-border-primary-300);
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+    opacity: 0.7;
+  }
+
+  // 高亮态（背景 + 主题色）
+  &:where(.o-text--custom-highlighted) {
+    background: var(--or-text-primary-warning-100);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+
+  // 强调态（粗 + 主题色背景）
+  &:where(.o-text--custom-strong-bg) {
+    background: currentColor;
+    color: var(--oc-text-primary-50);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+  }
+
+  // 透明态（点击后渐隐）
+  &:where(.o-text--custom-fade-on-active) {
+    transition: opacity 0.2s ease;
+
+    &:active {
+      opacity: 0.5;
+    }
+  }
+}
+
+// =============================================================================
+// C. data 属性钩子体系
+// =============================================================================
+//
+// 用户使用方式：
+//   <o-text data-o-text-stretch="full" data-o-text-tone="success">...</o-text>
+//
+// 与自定义类的区别：
+//   - 自定义类：纯视觉快捷方式
+//   - data 属性：行为/状态控制（部分可被 JS 监听）
+//
+// 所有 data 属性使用 data-o-text-* 命名空间，不与原生属性冲突
+
+// ── 尺寸拉伸 ──
+.o-text {
+  // 全宽
+  &:where([data-o-text-stretch='full']) {
+    display: block !important;
+    width: 100%;
+  }
+
+  // 容器宽度
+  &:where([data-o-text-stretch='container']) {
+    display: block !important;
+    max-width: 100%;
+  }
+
+  // 内容宽度
+  &:where([data-o-text-stretch='content']) {
+    display: inline-block !important;
+    max-width: 100%;
+  }
+}
+
+// ── 文本密度 ──
+.o-text {
+  &:where([data-o-text-density='compact']) {
+    line-height: 1.3;
+  }
+
+  &:where([data-o-text-density='normal']) {
+    line-height: 1.5;
+  }
+
+  &:where([data-o-text-density='relaxed']) {
+    line-height: 1.8;
+  }
+}
+
+// ── 装饰控制 ──
+.o-text {
+  // 强制显示装饰
+  &:where([data-o-text-decoration='always']) {
+    text-decoration-line: underline;
+  }
+
+  // hover 才显示装饰
+  &:where([data-o-text-decoration='hover']) {
+    text-decoration-line: none;
+    transition: text-decoration 0.2s ease;
+
+    &:hover {
+      text-decoration-line: underline;
+    }
+  }
+}
+
+// ── 选择控制 ──
+.o-text {
+  &:where([data-o-text-selectable='true']) {
+    user-select: text;
+  }
+
+  &:where([data-o-text-selectable='all']) {
+    user-select: all;
+  }
+
+  &:where([data-o-text-selectable='none']) {
+    user-select: none;
+  }
+}
+
+// ── 截断控制 ──
+.o-text {
+  &:where([data-o-text-truncate='1']) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:where([data-o-text-truncate='2']) {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  &:where([data-o-text-truncate='3']) {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+}
+
+// ── 外部链接（自动添加图标）──
+.o-text {
+  :where(a[data-o-text-external]) {
+    &::after {
+      content: ' ↗';
+      display: inline-block;
+      margin-left: 0.15em;
+      font-size: 0.85em;
+      opacity: 0.7;
+    }
+  }
+}
+
+// ── 复制支持（hover 显示复制按钮占位）──
+.o-text {
+  &:where([data-o-text-copyable='true']) {
+    cursor: copy;
+    position: relative;
+  }
+}
+
+// =============================================================================
+// D. 组合预设（preset）—— 多个自定义类的便捷组合
+// =============================================================================
+//
+// 用户使用方式：
+//   <o-text class="o-text--custom-preset-card-title">...</o-text>
+//
+// 用途：复杂场景的"开箱即用"组合，避免用户组合多个类
+
+.o-text {
+  // ── 卡片标题 ──
+  &:where(.o-text--custom-preset-card-title) {
+    font-size: 1.1em;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5em;
+  }
+
+  // ── 文章正文 ──
+  &:where(.o-text--custom-preset-article-body) {
+    font-size: 1em;
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+    margin: 1em 0;
+  }
+
+  // ── 列表项文字 ──
+  &:where(.o-text--custom-preset-list-item) {
+    display: block;
+    line-height: 1.5;
+    margin: 0.2em 0;
+  }
+
+  // ── 标签文字 ──
+  &:where(.o-text--custom-preset-tag-label) {
+    display: inline-block;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.15em 0.5em;
+    border-radius: 2px;
+    background: currentColor;
+    color: var(--oc-text-primary-50);
+    line-height: 1.4;
+  }
+
+  // ── 按钮文字 ──
+  &:where(.o-text--custom-preset-button-text) {
+    display: inline-block;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+
+  // ── 引言文字 ──
+  &:where(.o-text--custom-preset-quote-text) {
+    font-style: italic;
+    line-height: 1.6;
+    border-left: 3px solid currentColor;
+    padding-left: 1em;
+    margin: 1em 0;
+    opacity: 0.9;
+  }
+
+  // ── 警告文字 ──
+  &:where(.o-text--custom-preset-warning-text) {
+    color: var(--or-text-primary-warning-700);
+    background: var(--or-text-primary-warning-50);
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+    border-left: 3px solid currentColor;
+  }
+
+  // ── 错误文字 ──
+  &:where(.o-text--custom-preset-error-text) {
+    color: var(--or-text-primary-error-700);
+    background: var(--or-text-primary-error-50);
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+    border-left: 3px solid currentColor;
+  }
+
+  // ── 成功文字 ──
+  &:where(.o-text--custom-preset-success-text) {
+    color: var(--or-text-primary-success-700);
+    background: var(--or-text-primary-success-50);
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+    border-left: 3px solid currentColor;
+  }
+
+  // ── 信息文字 ──
+  &:where(.o-text--custom-preset-info-text) {
+    color: var(--or-text-primary-info-700);
+    background: var(--or-text-primary-info-50);
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+    border-left: 3px solid currentColor;
+  }
+}
+
+// =============================================================================
+// E. 扩展点清单（注释形式，方便用户查阅）
+// =============================================================================
+//
+// 【CSS 变量钩子】 颗粒度：最细
+//   --o-text-user-line-height       行高
+//   --o-text-user-letter-spacing    字距
+//   --o-text-user-font-family       字体
+//   --o-text-user-font-weight       字重
+//   --o-text-user-text-align        对齐
+//   --o-text-user-text-transform    转换
+//   --o-text-user-color             颜色
+//   --o-text-user-bg                背景
+//   --o-text-user-h{1-6}-color      标题颜色
+//   --o-text-user-mark-bg           mark 背景
+//   --o-text-user-mark-color        mark 文字色
+//   --o-text-user-pre-bg            pre 背景
+//   --o-text-user-code-bg           code 背景
+//   --o-text-user-code-color        code 文字色
+//   --o-text-user-blockquote-border-color  blockquote 左边框
+//   --o-text-user-blockquote-padding       blockquote 内边距
+//   --o-text-user-selection-bg      选区背景
+//   --o-text-user-focus-outline-color 焦点环色
+//   --o-text-user-dropcap-size      首字下沉大小
+//
+// 【自定义类】 颗粒度：粗（25+ 预设）
+//   .o-text--custom-overline        顶部装饰线
+//   .o-text--custom-double-line     双重装饰线
+//   .o-text--custom-wavy-underline  波浪下划线
+//   .o-text--custom-strike-soft     软删除线
+//   .o-text--custom-eyebrow         眉头标签
+//   .o-text--custom-compact         紧凑排版
+//   .o-text--custom-relaxed         宽松排版
+//   .o-text--custom-magazine        杂志风格
+//   .o-text--custom-terminal        终端风格
+//   .o-text--custom-emphasis-bold   重点
+//   .o-text--custom-quote-style     引用风
+//   .o-text--custom-tag-style       标签风
+//   .o-text--custom-numeric         数字风格
+//   .o-text--custom-legal           法律风格
+//   .o-text--custom-link-clean      无下划线链接
+//   .o-text--custom-link-button     按钮式链接
+//   .o-text--custom-link-card       卡片链接
+//   .o-text--custom-link-dashed     虚线链接
+//   .o-text--custom-block           块级
+//   .o-text--custom-flex            弹性
+//   .o-text--custom-grid-item       网格项
+//   .o-text--custom-truncate        单行截断
+//   .o-text--custom-draft           草稿
+//   .o-text--custom-highlighted     高亮
+//   .o-text--custom-strong-bg       强调背景
+//   .o-text--custom-fade-on-active  点击淡出
+//
+// 【组合预设】 颗粒度：粗（10 个业务场景）
+//   .o-text--custom-preset-card-title
+//   .o-text--custom-preset-article-body
+//   .o-text--custom-preset-list-item
+//   .o-text--custom-preset-tag-label
+//   .o-text--custom-preset-button-text
+//   .o-text--custom-preset-quote-text
+//   .o-text--custom-preset-warning-text
+//   .o-text--custom-preset-error-text
+//   .o-text--custom-preset-success-text
+//   .o-text--custom-preset-info-text
+//
+// 【data 属性】 颗粒度：中
+//   data-o-text-stretch="full|container|content"
+//   data-o-text-density="compact|normal|relaxed"
+//   data-o-text-decoration="always|hover"
+//   data-o-text-selectable="true|all|none"
+//   data-o-text-truncate="1|2|3"
+//   data-o-text-external
+//   data-o-text-copyable

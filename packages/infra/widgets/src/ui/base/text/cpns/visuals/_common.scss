@@ -1,0 +1,426 @@
+/**
+ * o-text 视觉差异化兜底层
+ *
+ * 职责：
+ *   提供"无法走主题系统 token 表达"的纯装饰差异化 —— 标题装饰线、pre/code 实用 UI、
+ *   blockquote、drop-cap、链接 external icon、label required、::selection、列表、
+ *   hr 装饰、响应式微调。
+ *
+ * 设计原则：
+ *   - 主题系统的 packages/base/theme/src/core/ 已派生完整 token（color 4 通道 +
+ *     spacing/radius/shadow/motion/font/opacity），同名 var(--xxx) 消费即可
+ *   - 本文件**不写主题色矩阵**（cpns/index.scss 的 $o-text-themes 已自动生成 6 档主题色类）
+ *   - 本文件**不写主题特殊视觉**（dark/guofeng 等差异化由主题系统 dim/traditional 预设覆盖）
+ *   - 本文件**只写"无 token 对应"的纯装饰差异化**：伪元素装饰线、滚动条、::first-letter、
+ *     ::selection、列表对齐、hr 装饰、focus-visible 等
+ *
+ * 保留字面量的场景：
+ *   - em 相对单位（跟随父元素字号缩放）
+ *   - 装饰性尺寸（装饰线 width/height、滚动条 width、分隔线 height）
+ *   - CSS 视觉效果值（transform / mix-blend-mode / cursor / user-select）
+ *   - 1px 通用边框（CSS 规范，无 1px 单独 token）
+ *
+ * 与 cpns/index.scss 的边界：
+ *   - index.scss：基类 + 尺寸/字重/色调变体 + mark 4 模式 + 显示效果 + 交互效果 + 动画
+ *   - common.scss（本文件）：组件层独有的"无 token 对应"装饰差异化
+ */
+
+@use 'sass:map';
+
+// =============================================================================
+// 1. 标题层装饰差异化（h1-h6）
+// =============================================================================
+//
+// 通用基础（字号/字重/行高/字距）已在 cpns/index.scss 通过 $o-text-heading-sizes 提供
+// 本节专注于"装饰性差异化"—— h1/h2/h3 的 ::before/::after 装饰线（em 相对单位，无 token 对应）
+
+.o-text {
+  &--tag-h1 {
+    position: relative;
+    padding-top: 0.5em;
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0.5em;
+      height: 0.18em;
+      background: currentColor;
+      border-radius: var(--radius-sm);
+      opacity: 0.85;
+    }
+  }
+
+  &--tag-h2 {
+    position: relative;
+    padding-bottom: 0.3em;
+    margin-top: 1.1em;
+    margin-bottom: 0.5em;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 1.5em;
+      height: 0.1em;
+      background: currentColor;
+      border-radius: var(--radius-sm);
+      opacity: 0.7;
+    }
+  }
+
+  &--tag-h3 {
+    position: relative;
+    padding-left: 0.8em;
+    margin-top: 1em;
+    margin-bottom: 0.4em;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.25em;
+      bottom: 0.25em;
+      width: 0.18em;
+      background: currentColor;
+      border-radius: var(--radius-sm);
+      opacity: 0.6;
+    }
+  }
+
+  &--tag-h4 { margin-top: 0.9em;  margin-bottom: 0.35em; }
+  &--tag-h5 { margin-top: 0.8em;  margin-bottom: 0.3em;  }
+  &--tag-h6 { margin-top: 0.7em;  margin-bottom: 0.3em; opacity: 0.85; }
+
+  // 可点击标题 hover 反馈
+  &--clickable:where(.o-text--tag-h1, .o-text--tag-h2, .o-text--tag-h3) {
+    cursor: pointer;
+    transition: opacity var(--duration-fast) var(--easing-ease);
+
+    &:hover { opacity: 0.75; }
+  }
+}
+
+// =============================================================================
+// 2. 段落视觉（p）+ 首字下沉（drop-cap）
+// =============================================================================
+
+.o-text {
+  &--tag-p {
+    margin-top: 0.6em;
+    margin-bottom: 0.6em;
+  }
+
+  // ── 标准首字下沉（4 行高度）──
+  &--drop-cap::first-letter {
+    float: left;
+    font-size: 3.2em;
+    line-height: 0.9;
+    padding-right: 0.12em;
+    padding-top: 0.08em;
+    font-weight: var(--weight-bold);
+    color: inherit;
+  }
+
+  // ── 大号首字下沉（5 行高度）──
+  &--drop-cap-lg::first-letter {
+    float: left;
+    font-size: 4em;
+    line-height: 0.85;
+    padding-right: 0.15em;
+    padding-top: 0.1em;
+    font-weight: var(--weight-bold);
+    color: inherit;
+  }
+
+  // ── 装饰首字下沉（带背景 + mix-blend-mode 反色）──
+  &--drop-cap-decorated::first-letter {
+    float: left;
+    font-size: 2.8em;
+    line-height: 0.9;
+    padding: 0.05em 0.2em;
+    margin-right: 0.1em;
+    font-weight: var(--weight-bold);
+    color: var(--oc-text-primary-50);
+    background: currentColor;
+    border-radius: var(--radius-sm);
+    mix-blend-mode: difference;
+  }
+}
+
+// =============================================================================
+// 3. 代码视觉增强（pre/code 滚动条）
+// =============================================================================
+//
+// 基础样式（字体/背景/padding/border-radius）已在 cpns/index.scss 提供
+// 本文件补充：滚动条样式（UI 控件尺寸，无 token 对应）
+
+.o-text {
+  &--tag-pre {
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--oc-border-primary-300);
+      border-radius: var(--radius-full);
+
+      &:hover {
+        background: var(--oc-border-primary-400);
+      }
+    }
+  }
+}
+
+// =============================================================================
+// 4. 引用视觉（blockquote / q / cite）
+// =============================================================================
+//
+// 引用样式属于语义视觉差异化，主题色由 currentColor 跟随父级 tony
+
+.o-text {
+  &--tag-blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-left: 4px solid currentColor;
+    border-radius: var(--radius-sm);
+    font-style: italic;
+    color: var(--oc-text-primary-600);
+    background: var(--oc-background-base-50);
+    line-height: var(--leading-relaxed);
+
+    // 引用内部的段落去掉额外间距（紧凑堆叠）
+    :where(p) {
+      margin: 0.4em 0;
+    }
+
+    // 引用来源（cite 元素通常斜体且缩小）
+    :where(cite) {
+      display: block;
+      margin-top: 0.5em;
+      font-size: 0.85em;
+      font-style: normal;
+      color: var(--oc-text-primary-500);
+
+      &::before {
+        content: '—— ';
+      }
+    }
+
+    // 嵌套引用层级
+    :where(blockquote) {
+      margin: 0.5em 0;
+      border-left-width: 2px;
+      opacity: 0.85;
+    }
+  }
+
+  // 行内引用
+  &--tag-q {
+    quotes: '"' '"' ''' ''';
+
+    &::before { content: open-quote; }
+    &::after  { content: close-quote; }
+  }
+}
+
+// =============================================================================
+// 5. 强调视觉（strong / em / mark）
+// =============================================================================
+
+.o-text {
+  &--tag-strong {
+    font-weight: var(--weight-bold);
+    color: var(--oc-text-primary-900);
+  }
+
+  &--tag-em {
+    font-style: italic;
+    color: var(--oc-text-primary-700);
+  }
+
+  // mark 标签在浏览器默认黄色高亮基础上提供定制入口
+  &--tag-mark {
+    background-color: var(--or-text-primary-warning-100);
+    color: inherit;
+    padding: 0 2px;
+    border-radius: var(--radius-sm);
+  }
+}
+
+// =============================================================================
+// 6. 链接交互（external icon / focus-visible）
+// =============================================================================
+//
+// 基础链接色继承父 tony（已在 cpns/index.scss 中处理）
+// 本文件补充：点击反馈、焦点环、外部链接图标
+
+.o-text {
+  :where(a) {
+    // ── 点击反馈（按下时透明度降低）──
+    &:active {
+      opacity: 0.6;
+    }
+
+    // ── 焦点环（无障碍）──
+    &:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+
+    // ── 外部链接图标（通过 data-external 触发）──
+    &[data-external='true']::after {
+      content: ' ↗';
+      display: inline-block;
+      margin-left: 0.15em;
+      font-size: 0.85em;
+      opacity: 0.7;
+      transition:
+        transform var(--duration-fast) var(--easing-ease),
+        opacity var(--duration-fast) var(--easing-ease);
+    }
+
+    &[data-external='true']:hover::after {
+      transform: translate(2px, -2px);
+      opacity: 1;
+    }
+  }
+}
+
+// =============================================================================
+// 7. 标签视觉（label）
+// =============================================================================
+//
+// 用于表单标签场景
+
+.o-text {
+  &--tag-label {
+    display: inline-block;
+    margin-bottom: 0.4em;
+    line-height: var(--leading-snug);
+
+    // 必填星号（通过 data-required 触发）
+    &[data-required='true']::after {
+      content: ' *';
+      color: var(--or-text-primary-error-500);
+      margin-left: 0.15em;
+    }
+  }
+}
+
+// =============================================================================
+// 8. 列表视觉（ul / ol / li）
+// =============================================================================
+
+.o-text {
+  :where(ul, ol) {
+    margin: 0.6em 0;
+    padding-left: 1.5em;
+  }
+
+  :where(li) {
+    margin: 0.3em 0;
+    line-height: var(--leading-relaxed);
+  }
+
+  // 紧凑列表
+  &--list-compact :where(li) {
+    margin: 0.1em 0;
+  }
+
+  // 不带项目符号
+  &--list-none :where(ul, ol) {
+    list-style: none;
+    padding-left: 0;
+  }
+}
+
+// =============================================================================
+// 9. 选区视觉（::selection）
+// =============================================================================
+
+.o-text {
+  &::selection {
+    background: var(--or-text-primary-info-200);
+    color: inherit;
+  }
+
+  // 禁止选择（已在 cpns/index.scss 提供基类，本节补充选区样式）
+  &--no-select::selection {
+    background: transparent;
+  }
+}
+
+// =============================================================================
+// 10. 分隔线视觉（hr）
+// =============================================================================
+
+.o-text {
+  :where(hr) {
+    border: none;
+    height: 1px;
+    background: var(--oc-border-primary-200);
+    margin: 1.5em 0;
+    position: relative;
+  }
+
+  // 装饰分隔线（中间带 ◆ 圆点）
+  &--hr-decorated :where(hr) {
+    height: 1px;
+    background: var(--oc-border-primary-200);
+    text-align: center;
+    position: relative;
+
+    &::after {
+      content: '◆';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--oc-background-base-0);
+      color: var(--oc-border-primary-400);
+      padding: 0 0.6em;
+      font-size: 0.8em;
+    }
+  }
+}
+
+// =============================================================================
+// 11. 响应式增强（小屏适配）
+// =============================================================================
+
+@media (max-width: 768px) {
+  .o-text {
+    &--tag-h1 {
+      padding-top: 0.3em;
+      &::before { width: 0.4em; height: 0.15em; }
+    }
+
+    &--tag-h2 {
+      &::after { width: 1.2em; }
+    }
+
+    &--tag-h3 {
+      padding-left: 0.6em;
+      &::before { width: 0.15em; }
+    }
+
+    &--drop-cap::first-letter {
+      font-size: 2.4em;
+    }
+
+    &--drop-cap-lg::first-letter {
+      font-size: 3em;
+    }
+  }
+}

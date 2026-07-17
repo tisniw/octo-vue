@@ -1,0 +1,19 @@
+/**
+ * o-text 视觉差异化聚合入口
+ *
+ * 设计原则：
+ *   主题系统（packages/base/theme/src/core/）已派生完整 token（color 4 通道 +
+ *   spacing/radius/shadow/motion/font/opacity），同名 var(--xxx) 消费即可。
+ *   visuals/ 仅保留"无 token 对应"的纯装饰差异化（一个兜底文件）。
+ *
+ *   已删除的冗余文件：
+ *     - _auto.scss    主题色矩阵已在 cpns/index.scss 的 $o-text-themes 自动生成
+ *     - _themes.scss  主题差异化由主题系统 dim/traditional 等预设覆盖 token 完成
+ *
+ * 使用方式（在 cpns/index.scss 中）：
+ *   @use './visuals';
+ */
+
+@forward './common';
+@forward './highlight';
+@forward './user-extensions';

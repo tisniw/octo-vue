@@ -1,0 +1,56 @@
+/**
+ * o-text 内置语法高亮 · token 配色
+ *
+ * 职责：
+ *   - 为 .o-text__hl-{token-type} 类声明 CSS 变量消费入口
+ *   - 颜色完全交给主题包：theme 主题组件包按当前激活主题
+ *     （视觉 × 主题 二维矩阵：9 个 visual × N 个 theme），
+ *     在 :root 下注入 --ohl-{tokenType} 配色
+ *   - 组件层不预设 light/dark/auto 等具体模式，不写 hex 兜底
+ *
+ * 设计说明：
+ *   语法高亮的 token 配色本质上是"代码视图调色板"，由主题系统管理。
+ *   组件层只负责声明"我需要 hl-keyword 这个变量"，由主题包统一派发。
+ *   用户可在具体元素上覆盖 --ohl-* 变量实现局部主题切换。
+ *
+ * 加载顺序：在 visuals/index.scss 中位于 user-extensions 之前，
+ *          让用户可以通过 CSS 变量在最后覆盖。
+ */
+
+.o-text {
+  // ── 启用高亮时的基础保障 ──
+  // v-html 输出的 <span> 默认会被父级某些样式（比如 line-through）影响，
+  // 这里强制让所有内部 span 不继承斜体（斜体只给 comment 单独用）。
+  &--highlighted span {
+    font-style: inherit;
+  }
+
+  // ── 代码块整体背景 ──
+  // 由主题包 --ohl-background 提供
+  &--code {
+    background: var(--ohl-background);
+  }
+
+  // ==================== token 配色 ====================
+  // 全部 token 类的 color 由主题包按当前激活视觉+主题注入。
+  // 命名空间 --ohl-* 详见 @octo/theme 的 core/derive/ohl.ts。
+
+  .o-text__hl-keyword     { color: var(--ohl-keyword);     font-weight: 600 }
+  .o-text__hl-string      { color: var(--ohl-string) }
+  .o-text__hl-number      { color: var(--ohl-number) }
+  .o-text__hl-comment     { color: var(--ohl-comment);     font-style: italic }
+  .o-text__hl-regex       { color: var(--ohl-regex) }
+  .o-text__hl-function    { color: var(--ohl-function) }
+  .o-text__hl-variable    { color: var(--ohl-variable) }
+  .o-text__hl-type        { color: var(--ohl-type) }
+  .o-text__hl-tag         { color: var(--ohl-tag) }
+  .o-text__hl-attr        { color: var(--ohl-attr) }
+  .o-text__hl-operator    { color: var(--ohl-operator) }
+  .o-text__hl-punctuation { color: var(--ohl-punctuation) }
+  .o-text__hl-property    { color: var(--ohl-property) }
+  .o-text__hl-builtin     { color: var(--ohl-builtin) }
+  .o-text__hl-boolean     { color: var(--ohl-boolean) }
+  .o-text__hl-null        { color: var(--ohl-null) }
+  .o-text__hl-selector    { color: var(--ohl-selector) }
+  .o-text__hl-plain       { color: var(--ohl-plain) } // 兜底类，目前 token 渲染不会输出 plain span，这里留个 CSS 变量入口
+}
